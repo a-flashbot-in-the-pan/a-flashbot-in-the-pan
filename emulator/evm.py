@@ -163,6 +163,12 @@ class EVM:
     def restore_from_snapshot(self):
         self.storage.discard(self.snapshot)
 
+    def dump_archive_state(self):
+        self.storage.dump_archive_state()
+
+    def load_archive_state(self):
+        self.storage.load_archive_state()
+
     def get_accounts(self):
         return [encode_hex(x) for x in
                 self.storage._cache_store_db.wrapped_db["account"].keys()]

@@ -10,12 +10,10 @@ import argparse
 import datetime
 
 from web3 import Web3
-from http import client
 from hexbytes import HexBytes
 from eth_utils import decode_hex, to_canonical_address
 
 from utils.settings import *
-from utils.utils import request_debug_trace
 from detection.insertion import *
 from emulator import Emulator
 
@@ -32,6 +30,7 @@ def shuffle(transactions, seed):
         sorted_mapping[transactions[i]['from']].append(transactions[i])
     keys = list(sorted_mapping.keys())
     # Shuffle the keys in the sorted mapping using the Knuth-Fisher-Yates algorithm.
+    # TODO: Check if there is an internal implementation in Python of the Fisher-Yates algorithm.
     m = len(keys)
     for i in range(m-1, 0, -1):
         j = random.randint(0, i+1)
@@ -41,22 +40,6 @@ def shuffle(transactions, seed):
     for i in range(m):
         shuffled_transactions += sorted_mapping[keys[i]]
     return shuffled_transactions
-
-def print_transactions(transactions):
-    print("  \t Sender                                   \t Receiver                                   \t Nonce \t Gas Price \t Transaction Hash")
-    print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-    for i in range(len(transactions)):
-        transaction = transactions[i]
-        if i > 0 and transaction['from'] == transactions[i-1]['from']:
-            if transaction.gasPrice > 9999999999999:
-                print(transaction.transactionIndex, '\t', " "+u'\u2514'+"> "+transaction['from'], '', transaction.to, '\t', transaction.nonce, '\t', transaction.gasPrice, '', transaction.hash.hex())
-            else:
-                print(transaction.transactionIndex, '\t', " "+u'\u2514'+"> "+transaction['from'], '', transaction.to, '\t', transaction.nonce, '\t', transaction.gasPrice, '\t', transaction.hash.hex())
-        else:
-            if transaction.gasPrice > 9999999999999:
-                print(transaction.transactionIndex, '\t', transaction['from'], '\t', transaction.to, '\t', transaction.nonce, '\t', transaction.gasPrice, '', transaction.hash.hex())
-            else:
-                print(transaction.transactionIndex, '\t', transaction['from'], '\t', transaction.to, '\t', transaction.nonce, '\t', transaction.gasPrice, '\t', transaction.hash.hex())
 
 def compare_transaction_orders(original_transactions, shuffled_transactions, insertion_results=None):
     assert(len(original_transactions) == len(shuffled_transactions))
@@ -84,27 +67,6 @@ def compare_transaction_orders(original_transactions, shuffled_transactions, ins
                 shuffled_transaction_output = str(shuffled_transaction.transactionIndex)+' 2.\t'+colors.FAIL+shuffled_transaction.hash.hex()+colors.END
 
         print(original_transaction_output+'\t|'+shuffled_transaction_output)
-
-def print_execution(result, execution_trace):
-    print("Last 20 executed instructions:")
-    for i in range(len(execution_trace)-20, len(execution_trace)):
-        ins = execution_trace[i]
-        print("\t", ins["opcode"])
-    print("Number of executed instructions:", len(execution_trace))
-    print("Success:",result.is_success)
-    print("Error:", result.is_error)
-    if result.is_error:
-        print("Error message:", str(result.error))
-    print("Logs:")
-    for log in result.get_log_entries():
-        print("\t", "Address:", "0x"+log[0].hex())
-        print("\t", "Topics:")
-        for topic in log[1]:
-            print("\t \t", hex(topic))
-        print("\t", "Data:", "0x"+log[2].hex())
-        print()
-    print("Return data:", "0x"+result.return_data.hex())
-    print("Output:", "0x"+result.output.hex())
 
 def filter_logs_by_topic(transaction, result, topic):
     logs = list()
@@ -172,51 +134,41 @@ def main():
     for i in range(len(shuffled_transactions)):
         shuffled_transactions[i].__dict__["transactionIndex"] = i
 
-
     emu = Emulator(PROVIDER, block)
+    emu.load_archive_state()
     token_transfer_events = list()
     uniswap_purchase_events = list()
+    execution_start = time.time()
     for transaction in original_transactions:
         print(transaction.transactionIndex, transaction.hash.hex())
         result, execution_trace = emu.execute_transaction(transaction)
-        """print("Number of executed instructions:", len(execution_trace))
-        connection = client.HTTPConnection(WEB3_HTTP_RPC_HOST, WEB3_HTTP_RPC_PORT)
-        response = request_debug_trace(connection, transaction.hash.hex(), custom_tracer=False, disable_stack=False)
-        if response and "result" in response:
-            print(len(response["result"]["structLogs"]))
-            if len(response["result"]["structLogs"]) != len(execution_trace):
-                for i in range(len(execution_trace)):
-                    print(i+1, execution_trace[i]["opcode"], response["result"]["structLogs"][i]["op"], response["result"]["structLogs"][i]["stack"])
-                if result.is_error:
-                    print("Error message:", str(result.error))
-            assert(len(response["result"]["structLogs"]) == len(execution_trace))"""
         token_transfer_events += filter_logs_by_topic(transaction, result, TRANSFER)
         uniswap_purchase_events += filter_logs_by_topic(transaction, result, TOKEN_PURCHASE)
         uniswap_purchase_events += filter_logs_by_topic(transaction, result, ETH_PURCHASE)
     print(len(token_transfer_events))
     print(len(uniswap_purchase_events))
-
+    print(time.time() - execution_start, "seconds")
+    emu.dump_archive_state()
     insertion_results = analyze_block_for_insertion(w3, block, original_transactions, token_transfer_events, uniswap_purchase_events)
 
     emu = Emulator(PROVIDER, block)
+    emu.load_archive_state()
     token_transfer_events = list()
     uniswap_purchase_events = list()
+    execution_start = time.time()
     for transaction in shuffled_transactions:
         print(transaction.transactionIndex, transaction.hash.hex())
         result, execution_trace = emu.execute_transaction(transaction)
         token_transfer_events += filter_logs_by_topic(transaction, result, TRANSFER)
         uniswap_purchase_events += filter_logs_by_topic(transaction, result, TOKEN_PURCHASE)
         uniswap_purchase_events += filter_logs_by_topic(transaction, result, ETH_PURCHASE)
-
     print(len(token_transfer_events))
     print(len(uniswap_purchase_events))
-
+    print(time.time() - execution_start, "seconds")
+    emu.dump_archive_state()
     analyze_block_for_insertion(w3, block, shuffled_transactions, token_transfer_events, uniswap_purchase_events)
 
-    #print_transactions(original_transactions)
-    #print_transactions(shuffled_transactions)
     compare_transaction_orders(original_transactions, shuffled_transactions, insertion_results)
-
 
 if __name__ == '__main__':
     main()

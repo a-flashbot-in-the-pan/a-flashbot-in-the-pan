@@ -38,7 +38,7 @@ def quad_res(x, p):
 def main():
     # Find more primes 256 bit, 512 bit and 1024 bit. They need to be p = 3 mod 4
     p = 73237431696005972674723595250817150843
-    t = 10000 # 4 sec +/-
+    t = 10000 # 1.5 sec +/-
     #x = 80 % p
 
     #p = 1000000007

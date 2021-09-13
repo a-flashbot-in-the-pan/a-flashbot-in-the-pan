@@ -24,6 +24,9 @@ from eth.abc import (
     HeaderDatabaseAPI,
 )
 
+import os
+import pickle
+
 class EmulatorMemoryDB(MemoryDB):
     def __init__(self) -> None:
         self.kv_store = {'storage': dict(), 'account': dict(), 'code': dict()}
@@ -36,6 +39,7 @@ class EmulatorAccountDB(AccountDatabaseAPI):
         self.state_root = BLANK_ROOT_HASH
         self._raw_store_db = db
         self._cache_store_db = deepcopy(self._raw_store_db)
+        self._archive_state = {"storage": {}, "code": {}, "account": {}}
 
     def set_web3_provider(self, provider) -> None:
         self._w3 = Web3(provider)
@@ -82,7 +86,13 @@ class EmulatorAccountDB(AccountDatabaseAPI):
         if address not in self._cache_account:
             self._get_account(address)
         if slot not in self._cache_storage[address]:
-            result = self._fallback.getStorageAt(address, slot, self._fork_block_number)
+            if not address in self._archive_state["storage"]:
+                self._archive_state["storage"][address] = dict()
+            if slot in self._archive_state["storage"][address]:
+                result = self._archive_state["storage"][address][slot]
+            else:
+                result = self._fallback.getStorageAt(address, slot, self._fork_block_number)
+                self._archive_state["storage"][address][slot] = result
             result = to_int(result.hex())
             self._storage[address][slot] = result
             self._cache_storage[address][slot] = result
@@ -108,19 +118,27 @@ class EmulatorAccountDB(AccountDatabaseAPI):
 
     def _get_account(self, address: Address) -> Account:
         if address not in self._cache_account:
-            code = self._fallback.getCode(address, self._fork_block_number)
+            if address in self._archive_state["code"]:
+                code = self._archive_state["code"][address]
+            else:
+                code = self._fallback.getCode(address, self._fork_block_number)
+                self._archive_state["code"][address] = code
             if code:
                 code_hash = keccak(code)
                 self._code[code_hash] = code
                 self._cache_code[code_hash] = code
             else:
                 code_hash = EMPTY_SHA3
-            account = Account(
-                int(self._fallback.getTransactionCount(address, self._fork_block_number)),
-                self._fallback.getBalance(address, self._fork_block_number),
-                BLANK_ROOT_HASH,
-                code_hash
-            )
+            if address in self._archive_state["account"]:
+                account = self._archive_state["account"][address]
+            else:
+                account = Account(
+                    int(self._fallback.getTransactionCount(address, self._fork_block_number)),
+                    self._fallback.getBalance(address, self._fork_block_number),
+                    BLANK_ROOT_HASH,
+                    code_hash
+                )
+                self._archive_state["account"][address] = account
             self._cache_account[address] = account.copy()
             self._account[address] = account.copy()
             self._cache_storage[address] = dict()
@@ -132,11 +150,6 @@ class EmulatorAccountDB(AccountDatabaseAPI):
 
     def _set_account(self, address: Address, account: Account) -> None:
         self._cache_account[address] = account
-
-    def _set_adversary_account(self, address: Address,
-                               account: Account) -> None:
-        self._cache_account[address] = account
-        self._account[address] = account
 
     def get_nonce(self, address: Address) -> int:
         validate_canonical_address(address, title="Storage Address")
@@ -225,6 +238,15 @@ class EmulatorAccountDB(AccountDatabaseAPI):
 
     def discard(self, checkpoint: AtomicDB) -> None:
         self._cache_store_db = deepcopy(checkpoint)
+
+    def dump_archive_state(self) -> None:
+        with open(str(self._fork_block_number)+'.pkl', 'wb') as f:
+            pickle.dump(self._archive_state, f)
+
+    def load_archive_state(self) -> None:
+        if os.path.exists(str(self._fork_block_number)+'.pkl'):
+            with open(str(self._fork_block_number)+'.pkl', 'rb') as f:
+                self._archive_state = pickle.load(f)
 
     def commit(self, checkpoint: JournalDBCheckpoint) -> None:
         pass
