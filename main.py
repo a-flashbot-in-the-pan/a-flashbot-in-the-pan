@@ -119,20 +119,20 @@ def main():
         sys.exit(-1)
 
     w3 = Web3(PROVIDER)
-    print('\033[1mWeb3 version: '+w3.api+'\033[0m')
+    bold('Web3 version: '+w3.api)
 
     latestBlock = w3.eth.getBlock('latest')
-    print('\033[1mConnected to the Ethereum blockchain.\033[0m')
+    bold('Connected to the Ethereum blockchain.')
     if w3.eth.syncing == False:
-        print('\033[1mEthereum blockchain is synced.\033[0m')
-        print('\033[1mLatest block: '+str(latestBlock.number)+' ('+datetime.datetime.fromtimestamp(int(latestBlock.timestamp)).strftime('%d-%m-%Y %H:%M:%S')+')\n\033[0m')
+        bold('Ethereum blockchain is synced.')
+        bold('Latest block: '+str(latestBlock.number)+' ('+datetime.datetime.fromtimestamp(int(latestBlock.timestamp)).strftime('%d-%m-%Y %H:%M:%S')+')\n')
     else:
-        print('\033[1mEthereum blockchain is currently syncing...\033[0m')
-        print('\033[1mLatest block: '+str(latestBlock.number)+' ('+datetime.datetime.fromtimestamp(int(latestBlock.timestamp)).strftime('%d-%m-%Y %H:%M:%S')+')\n\033[0m')
+        bold('Ethereum blockchain is currently syncing...')
+        bold('Latest block: '+str(latestBlock.number)+' ('+datetime.datetime.fromtimestamp(int(latestBlock.timestamp)).strftime('%d-%m-%Y %H:%M:%S')+')\n')
 
-    print('\033[1mRetrieving original transactions for block number: '+args.block+'...\033[0m')
+    bold('Retrieving original transactions for block number: '+args.block+'...')
     block = w3.eth.getBlock(int(args.block), True)
-    print('\033[1mBlock has been minded by: '+block.extraData.decode("utf-8")+'\n\033[0m')
+    bold('Block has been minded by: '+block.extraData.decode("utf-8")+'\n')
 
     original_transactions = block.transactions
     # Compute seed for shuffling: Concatenate previous block hash with hash of all current transactions in sorted order
@@ -156,6 +156,9 @@ def main():
     _analyze_tx_set(w3, block, shuffled_transactions)
 
     compare_transaction_orders(original_transactions, shuffled_transactions, insertion_results)
+
+def bold(text):
+    print('\033[1m' + text +'\033[0m')
 
 if __name__ == '__main__':
     main()
