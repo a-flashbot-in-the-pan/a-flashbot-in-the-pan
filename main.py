@@ -17,28 +17,28 @@ from utils.settings import *
 from detection.insertion import *
 from emulator import Emulator
 
+def _group_transactions(transactions):
+    sorted_mapping = dict()
+    for tx in transactions:
+        if not tx['from'] in sorted_mapping:
+            sorted_mapping[tx['from']] = list()
+        sorted_mapping[tx['from']].append(tx)
+    return (list(sorted_mapping.keys()), sorted_mapping)
+
 # NOTE: I realized that geth only goups transactions from the same sender together if gas price and nonce provide a conflict. For example, if tx1 has nonce 1 and gas price 2 and tx2 has nonce 2 and gas price 4 then geth will first execute tx1 and then tx2 because of the nonce, although tx2 pays a higher gas price. The same applies if tx2 has the same gas price as tx1, then they are grouped together in the order and the nonce defines the order. However, if tx2 would has a lower gas price than tx1, then they are not grouped together, meaning that there can be other transaction in between from other senders.
-def shuffle(transactions, seed):
-    n = len(transactions)
+def sort_and_shuffle(transactions, seed):
+    #import pdb; pdb.set_trace()
     random.seed(a=seed, version=2)
     # We assume that the transactions are already sorted based on gas price and nonce.
     # Thus all we need to do is group the sorted transactions by sender.
-    sorted_mapping = dict()
-    for i in range(n):
-        if not transactions[i]['from'] in sorted_mapping:
-            sorted_mapping[transactions[i]['from']] = list()
-        sorted_mapping[transactions[i]['from']].append(transactions[i])
-    keys = list(sorted_mapping.keys())
-    # Shuffle the keys in the sorted mapping using the Knuth-Fisher-Yates algorithm.
-    # TODO: Check if there is an internal implementation in Python of the Fisher-Yates algorithm.
-    m = len(keys)
-    for i in range(m-1, 0, -1):
-        j = random.randint(0, i+1)
-        keys[i], keys[j] = keys[j], keys[i]
+    keys, sorted_mapping = _group_transactions(transactions)
+    random.shuffle(keys)
+
     # Finally, assemble new transaction order based on the shuffled keys.
     shuffled_transactions = list()
-    for i in range(m):
-        shuffled_transactions += sorted_mapping[keys[i]]
+    for key in keys:
+        shuffled_transactions.extend(sorted_mapping[key])
+
     return shuffled_transactions
 
 def compare_transaction_orders(original_transactions, shuffled_transactions, insertion_results=None):
@@ -84,6 +84,24 @@ def filter_logs_by_topic(transaction, result, topic):
                     logs.append(log)
     return logs
 
+def _analyze_tx_set(w3, block, transactions):
+    emu = Emulator(PROVIDER, block)
+    emu.load_archive_state()
+    token_transfer_events = list()
+    uniswap_purchase_events = list()
+    execution_start = time.time()
+    for transaction in transactions:
+        print(transaction.transactionIndex, transaction.hash.hex())
+        result, execution_trace = emu.execute_transaction(transaction)
+        token_transfer_events += filter_logs_by_topic(transaction, result, TRANSFER)
+        uniswap_purchase_events += filter_logs_by_topic(transaction, result, TOKEN_PURCHASE)
+        uniswap_purchase_events += filter_logs_by_topic(transaction, result, ETH_PURCHASE)
+    print(len(token_transfer_events))
+    print(len(uniswap_purchase_events))
+    print(time.time() - execution_start, "seconds")
+    emu.dump_archive_state()
+    return analyze_block_for_insertion(w3, block, transactions, token_transfer_events, uniswap_purchase_events)
+
 def main():
     global args
 
@@ -125,7 +143,7 @@ def main():
     transactions_hash = sha3_hash.digest()
     seed = block.parentHash + transactions_hash
     print("Seed", seed.hex())
-    shuffled_transactions = shuffle(copy.deepcopy(original_transactions), seed)
+    shuffled_transactions = sort_and_shuffle(copy.deepcopy(original_transactions), seed)
     execution_time = time.time() - start
     print("Seed generation and shuffling took:", execution_time, "second(s)")
 
@@ -134,39 +152,8 @@ def main():
     for i in range(len(shuffled_transactions)):
         shuffled_transactions[i].__dict__["transactionIndex"] = i
 
-    emu = Emulator(PROVIDER, block)
-    emu.load_archive_state()
-    token_transfer_events = list()
-    uniswap_purchase_events = list()
-    execution_start = time.time()
-    for transaction in original_transactions:
-        print(transaction.transactionIndex, transaction.hash.hex())
-        result, execution_trace = emu.execute_transaction(transaction)
-        token_transfer_events += filter_logs_by_topic(transaction, result, TRANSFER)
-        uniswap_purchase_events += filter_logs_by_topic(transaction, result, TOKEN_PURCHASE)
-        uniswap_purchase_events += filter_logs_by_topic(transaction, result, ETH_PURCHASE)
-    print(len(token_transfer_events))
-    print(len(uniswap_purchase_events))
-    print(time.time() - execution_start, "seconds")
-    emu.dump_archive_state()
-    insertion_results = analyze_block_for_insertion(w3, block, original_transactions, token_transfer_events, uniswap_purchase_events)
-
-    emu = Emulator(PROVIDER, block)
-    emu.load_archive_state()
-    token_transfer_events = list()
-    uniswap_purchase_events = list()
-    execution_start = time.time()
-    for transaction in shuffled_transactions:
-        print(transaction.transactionIndex, transaction.hash.hex())
-        result, execution_trace = emu.execute_transaction(transaction)
-        token_transfer_events += filter_logs_by_topic(transaction, result, TRANSFER)
-        uniswap_purchase_events += filter_logs_by_topic(transaction, result, TOKEN_PURCHASE)
-        uniswap_purchase_events += filter_logs_by_topic(transaction, result, ETH_PURCHASE)
-    print(len(token_transfer_events))
-    print(len(uniswap_purchase_events))
-    print(time.time() - execution_start, "seconds")
-    emu.dump_archive_state()
-    analyze_block_for_insertion(w3, block, shuffled_transactions, token_transfer_events, uniswap_purchase_events)
+    insertion_results = _analyze_tx_set(w3, block, original_transactions)
+    _analyze_tx_set(w3, block, shuffled_transactions)
 
     compare_transaction_orders(original_transactions, shuffled_transactions, insertion_results)
 
