@@ -8,6 +8,9 @@ import random
 import hashlib
 import argparse
 import datetime
+import logging
+from time import sleep
+from secrets import randbits
 
 from web3 import Web3
 from hexbytes import HexBytes
@@ -17,7 +20,11 @@ from utils.settings import *
 from detection.insertion import *
 from emulator import Emulator
 
+log = logging.getLogger(__name__)
+
 def _group_transactions(transactions):
+    """Group transactions by sender and nonce."""
+    log.debug("Grouping transactions by sender and nonce...")
     sorted_mapping = dict()
     for tx in transactions:
         if not tx['from'] in sorted_mapping:
@@ -25,13 +32,42 @@ def _group_transactions(transactions):
         sorted_mapping[tx['from']].append(tx)
     return (list(sorted_mapping.keys()), sorted_mapping)
 
+# We don't need to use an actual VDF, since this is all done through simulation.
+# Instead of modeling the delay indirectly through a computational difficulty
+# parameter, we will model it directly with a delay parameter.
+def vdf_sim(seed, delay_ms=10, num_bits=256):
+    log.debug("Simulated VDF delay=%i", delay_ms)
+    sleep(delay_ms / 1000.)
+    return randbits(num_bits)
+
 # NOTE: I realized that geth only goups transactions from the same sender together if gas price and nonce provide a conflict. For example, if tx1 has nonce 1 and gas price 2 and tx2 has nonce 2 and gas price 4 then geth will first execute tx1 and then tx2 because of the nonce, although tx2 pays a higher gas price. The same applies if tx2 has the same gas price as tx1, then they are grouped together in the order and the nonce defines the order. However, if tx2 would has a lower gas price than tx1, then they are not grouped together, meaning that there can be other transaction in between from other senders.
-def sort_and_shuffle(transactions, seed):
-    #import pdb; pdb.set_trace()
-    random.seed(a=seed, version=2)
+def sort_and_shuffle(transactions, block):
+    log.info("Initiating sort-and-shuffle...")
     # We assume that the transactions are already sorted based on gas price and nonce.
-    # Thus all we need to do is group the sorted transactions by sender.
     keys, sorted_mapping = _group_transactions(transactions)
+
+    # Sort buckets in ascending order by sender address
+    # this is necessary because after grouping transactions
+    # from the same sender, we need to make sure that the
+    # groups are in a deterministic order.
+    log.info("Sorting groups...")
+    keys.sort()
+
+    # Hash all transactions together, sequentially.
+    log.info("Hashing transactions...")
+    sha3_hash = hashlib.sha3_256()
+    for key in keys:
+        for tx in sorted_mapping[key]:
+            sha3_hash.update(tx.hash)
+
+    # Include the hash of the parent block
+    sha3_hash.update(block.parentHash)
+    seed_vdf = sha3_hash.digest()
+    seed_shuffle = vdf_sim(seed_vdf)
+
+    random.seed(seed_shuffle)
+
+    log.info("Shuffling groups...")
     random.shuffle(keys)
 
     # Finally, assemble new transaction order based on the shuffled keys.
@@ -112,6 +148,10 @@ def main():
 
     parser.add_argument(
         "-v", "--version", action="version", version="0.0.1")
+
+    parser.add_argument(
+        "-s", "--seed", type=int, default=0, help="A seed to run deterministic experiments")
+
     args = parser.parse_args()
 
     if not args.block:
@@ -120,6 +160,9 @@ def main():
 
     w3 = Web3(PROVIDER)
     bold('Web3 version: '+w3.api)
+
+    # Experiments should be deterministic and reproducable.
+    random.seed(args.seed)
 
     latestBlock = w3.eth.getBlock('latest')
     bold('Connected to the Ethereum blockchain.')
@@ -132,18 +175,12 @@ def main():
 
     bold('Retrieving original transactions for block number: '+args.block+'...')
     block = w3.eth.getBlock(int(args.block), True)
-    bold('Block has been minded by: '+block.extraData.decode("utf-8")+'\n')
+    bold('Block has been mined by: '+block.extraData.decode("utf-8")+'\n')
 
     original_transactions = block.transactions
     # Compute seed for shuffling: Concatenate previous block hash with hash of all current transactions in sorted order
     start = time.time()
-    sha3_hash = hashlib.sha3_256()
-    for transaction in block.transactions:
-        sha3_hash.update(transaction.hash)
-    transactions_hash = sha3_hash.digest()
-    seed = block.parentHash + transactions_hash
-    print("Seed", seed.hex())
-    shuffled_transactions = sort_and_shuffle(copy.deepcopy(original_transactions), seed)
+    shuffled_transactions = sort_and_shuffle(copy.deepcopy(original_transactions), block)
     execution_time = time.time() - start
     print("Seed generation and shuffling took:", execution_time, "second(s)")
 
