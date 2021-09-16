@@ -4,13 +4,12 @@
 import sys
 import time
 import copy
-import random
+from random import getrandbits, seed, shuffle
 import hashlib
 import argparse
 import datetime
 import logging
 from time import sleep
-from secrets import randbits
 
 from web3 import Web3
 from hexbytes import HexBytes
@@ -37,10 +36,11 @@ def _group_transactions(transactions):
 # We don't need to use an actual VDF, since this is all done through simulation.
 # Instead of modeling the delay indirectly through a computational difficulty
 # parameter, we will model it directly with a delay parameter.
-def vdf_sim(seed, delay_ms=10, num_bits=256):
+def vdf_sim(vdf_seed, delay_ms=10, num_bits=256):
     log.debug("Simulated VDF delay=%i", delay_ms)
     sleep(delay_ms / 1000.0)
-    return randbits(num_bits)
+    seed(int.from_bytes(vdf_seed, byteorder="big"))
+    return getrandbits(num_bits)
 
 
 # NOTE: I realized that geth only goups transactions from the same sender
@@ -76,10 +76,10 @@ def sort_and_shuffle(transactions, block, vdf_delay_ms):
     seed_vdf = sha3_hash.digest()
     seed_shuffle = vdf_sim(seed_vdf, vdf_delay_ms)
 
-    random.seed(seed_shuffle)
+    seed(seed_shuffle)
 
     log.info("Shuffling groups...")
-    random.shuffle(keys)
+    shuffle(keys)
 
     # Finally, assemble new transaction order based on the shuffled keys.
     shuffled_transactions = list()
@@ -257,7 +257,7 @@ def main():
     log.info("Web3 version: " + w3.api)
 
     # Experiments should be deterministic and reproducable.
-    random.seed(args.seed)
+    seed(args.seed)
 
     latestBlock = w3.eth.getBlock("latest")
     log.info("Connected to the Ethereum blockchain.")
@@ -286,8 +286,7 @@ def main():
     shuffled_transactions = sort_and_shuffle(
         copy.deepcopy(original_transactions), block, args.vdf_delay_ms
     )
-    execution_time = time.time() - start
-    log.info("Seed generation and shuffling took:", execution_time, "second(s)")
+    log.info("Seed generation and shuffling took: %i second(s)", time.time() - start)
 
     compare_transaction_orders(original_transactions, shuffled_transactions)
     # Apply the new transaction index
