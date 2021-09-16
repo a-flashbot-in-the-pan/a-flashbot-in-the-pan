@@ -144,7 +144,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "-b", "--block", type=str, help="Ethereum mainnet block number to test sort&shuffle")
+        "-b", "--block", type=str, help="Ethereum mainnet block number to test sort-and-shuffle", required=True)
 
     parser.add_argument(
         "-v", "--version", action="version", version="0.0.1")
@@ -154,9 +154,6 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.block:
-        print("Error: Block number not provided!")
-        sys.exit(-1)
 
     w3 = Web3(PROVIDER)
     bold('Web3 version: '+w3.api)
