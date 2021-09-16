@@ -158,30 +158,30 @@ def main():
     args = parser.parse_args()
 
     w3 = Web3(PROVIDER)
-    bold('Web3 version: '+w3.api)
+    log.info('Web3 version: '+w3.api)
 
     # Experiments should be deterministic and reproducable.
     random.seed(args.seed)
 
     latestBlock = w3.eth.getBlock('latest')
-    bold('Connected to the Ethereum blockchain.')
+    log.info('Connected to the Ethereum blockchain.')
     if w3.eth.syncing == False:
-        bold('Ethereum blockchain is synced.')
-        bold('Latest block: '+str(latestBlock.number)+' ('+datetime.datetime.fromtimestamp(int(latestBlock.timestamp)).strftime('%d-%m-%Y %H:%M:%S')+')\n')
+        log.info('Ethereum blockchain is synced.')
     else:
-        bold('Ethereum blockchain is currently syncing...')
-        bold('Latest block: '+str(latestBlock.number)+' ('+datetime.datetime.fromtimestamp(int(latestBlock.timestamp)).strftime('%d-%m-%Y %H:%M:%S')+')\n')
+        log.warning('Ethereum blockchain is currently syncing...')
 
-    bold('Retrieving original transactions for block number: '+args.block+'...')
+    log.info('Latest block: '+str(latestBlock.number)+' ('+datetime.datetime.fromtimestamp(int(latestBlock.timestamp)).strftime('%d-%m-%Y %H:%M:%S')+')\n')
+
+    log.info('Retrieving original transactions for block number: '+args.block+'...')
     block = w3.eth.getBlock(int(args.block), True)
-    bold('Block has been mined by: '+block.extraData.decode("utf-8")+'\n')
+    log.info('Block has been mined by: '+block.extraData.decode("utf-8")+'\n')
 
     original_transactions = block.transactions
     # Compute seed for shuffling: Concatenate previous block hash with hash of all current transactions in sorted order
     start = time.time()
     shuffled_transactions = sort_and_shuffle(copy.deepcopy(original_transactions), block, args.vdf_delay_ms)
     execution_time = time.time() - start
-    print("Seed generation and shuffling took:", execution_time, "second(s)")
+    log.info("Seed generation and shuffling took:", execution_time, "second(s)")
 
     compare_transaction_orders(original_transactions, shuffled_transactions)
     # Apply the new transaction index
@@ -192,9 +192,6 @@ def main():
     _analyze_tx_set(w3, block, shuffled_transactions)
 
     compare_transaction_orders(original_transactions, shuffled_transactions, insertion_results)
-
-def bold(text):
-    print('\033[1m' + text +'\033[0m')
 
 if __name__ == '__main__':
     main()
