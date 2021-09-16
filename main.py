@@ -41,7 +41,7 @@ def vdf_sim(seed, delay_ms=10, num_bits=256):
     return randbits(num_bits)
 
 # NOTE: I realized that geth only goups transactions from the same sender together if gas price and nonce provide a conflict. For example, if tx1 has nonce 1 and gas price 2 and tx2 has nonce 2 and gas price 4 then geth will first execute tx1 and then tx2 because of the nonce, although tx2 pays a higher gas price. The same applies if tx2 has the same gas price as tx1, then they are grouped together in the order and the nonce defines the order. However, if tx2 would has a lower gas price than tx1, then they are not grouped together, meaning that there can be other transaction in between from other senders.
-def sort_and_shuffle(transactions, block):
+def sort_and_shuffle(transactions, block, vdf_delay_ms):
     log.info("Initiating sort-and-shuffle...")
     # We assume that the transactions are already sorted based on gas price and nonce.
     keys, sorted_mapping = _group_transactions(transactions)
@@ -63,7 +63,7 @@ def sort_and_shuffle(transactions, block):
     # Include the hash of the parent block
     sha3_hash.update(block.parentHash)
     seed_vdf = sha3_hash.digest()
-    seed_shuffle = vdf_sim(seed_vdf)
+    seed_shuffle = vdf_sim(seed_vdf, vdf_delay_ms)
 
     random.seed(seed_shuffle)
 
@@ -152,8 +152,10 @@ def main():
     parser.add_argument(
         "-s", "--seed", type=int, default=0, help="A seed to run deterministic experiments")
 
-    args = parser.parse_args()
+    parser.add_argument(
+        "-d", "--vdf-delay-ms", type=int, default=0, help="The simulated VDF delay")
 
+    args = parser.parse_args()
 
     w3 = Web3(PROVIDER)
     bold('Web3 version: '+w3.api)
@@ -177,7 +179,7 @@ def main():
     original_transactions = block.transactions
     # Compute seed for shuffling: Concatenate previous block hash with hash of all current transactions in sorted order
     start = time.time()
-    shuffled_transactions = sort_and_shuffle(copy.deepcopy(original_transactions), block)
+    shuffled_transactions = sort_and_shuffle(copy.deepcopy(original_transactions), block, args.vdf_delay_ms)
     execution_time = time.time() - start
     print("Seed generation and shuffling took:", execution_time, "second(s)")
 
