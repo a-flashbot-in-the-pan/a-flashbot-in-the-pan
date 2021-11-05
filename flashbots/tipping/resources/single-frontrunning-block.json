@@ -1,0 +1,54 @@
+{
+  "blocks": [
+    {
+      "block_number": 12045697,
+      "miner_reward": "163753207784126598",
+      "miner": "0xD224cA0c819e8E97ba0136B3b95ceFf503B79f53",
+      "coinbase_transfers": "143968507784126598",
+      "gas_used": 252740,
+      "gas_price": "647911718699",
+      "transactions": [
+        {
+          "transaction_hash": "0xab16c4a7dbb403f45b8cd76945d25138d3c9728ece18959eb0c551d6653018d7",
+          "tx_index": 0,
+          "bundle_type": "flashbots",
+          "bundle_index": 0,
+          "block_number": 12045697,
+          "eoa_address": "0xf7c46aEA63F55a2A413171267Ba4E993EfF0B70a",
+          "to_address": "0x000000003a7Cd5b15e460f73976b267544726f5f",
+          "gas_used": 68724,
+          "gas_price": "0",
+          "coinbase_transfer": "0",
+          "total_miner_reward": "0"
+        },
+        {
+          "transaction_hash": "0x89e47b1d61dbbaaee5669fe1dd783fa0564f380eda47df39e4053bccaa057714",
+          "tx_index": 1,
+          "bundle_type": "flashbots",
+          "bundle_index": 0,
+          "block_number": 12045697,
+          "eoa_address": "0x984284857E936D165aEc504fC38EC7FF8b965171",
+          "to_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+          "gas_used": 115700,
+          "gas_price": "171000000000",
+          "coinbase_transfer": "0",
+          "total_miner_reward": "19784700000000000"
+        },
+        {
+          "transaction_hash": "0x9683e160bdf8628c294bf999c874cddff37254eccc0e486dbe2271531b064178",
+          "tx_index": 2,
+          "bundle_type": "flashbots",
+          "bundle_index": 0,
+          "block_number": 12045697,
+          "eoa_address": "0xf7c46aEA63F55a2A413171267Ba4E993EfF0B70a",
+          "to_address": "0x000000003a7Cd5b15e460f73976b267544726f5f",
+          "gas_used": 68316,
+          "gas_price": "2107390769133",
+          "coinbase_transfer": "143968507784126598",
+          "total_miner_reward": "143968507784126598"
+        }
+      ]
+    }
+  ],
+  "latest_block_number": 13558513
+}

@@ -13,6 +13,9 @@ in mkShell rec {
     pythonPackages.venvShellHook
     # Linting + development
     nodePackages.pyright
+    pythonPackages.pandas
+
+    pipreqs
     bashInteractive
   ];
 
