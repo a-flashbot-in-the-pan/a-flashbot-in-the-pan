@@ -5,9 +5,12 @@ import logging
 import sys
 
 import pandas as pd
+from web3 import Web3
 
 log = logging.getLogger(__name__)
 
+infura_url = "https://mainnet.infura.io/v3/0f0ac9aba45a4143b6707971db4d6b70"
+web3 = Web3(Web3.HTTPProvider(infura_url))
 
 def calcuate_tip(filepath: str) -> float:
     return calculate_tip_dataframe(pd.read_json(filepath))
@@ -41,6 +44,7 @@ def main():
     logging.basicConfig(stream=sys.stdout, filemode="w", level=args.log_level.upper())
 
     tip = calcuate_tip(args.data_file)
+    print(web3.isConnected())
     print(tip)
 
 if __name__ == '__main__':

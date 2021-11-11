@@ -21,5 +21,5 @@ pymongo==3.12.1
 pyOpenSSL==21.0.0
 tornado==6.1
 web3==5.24.0
-wincertstore==0.2.1
-zipp==3.6.0
+wincertstore==0.2
+zipp==3.6
