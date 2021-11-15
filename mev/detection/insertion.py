@@ -15,7 +15,7 @@ from web3 import Web3
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 from utils.settings import *
-from utils.utils import colors
+from utils.utils import colors, get_prices, get_one_eth_to_usd
 
 TOKEN_AMOUNT_DELTA = 0.01 # Maximum difference between buying and selling amount of tokens. Default value is 1%.
 
@@ -29,7 +29,7 @@ def get_transaction(transactions, transaction_hash):
             return transaction
     return None
 
-def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, uniswap_purchase_events):
+def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, uniswap_purchase_events, prices):
     results = list()
     whales = set()
     attackers = set()
@@ -91,8 +91,9 @@ def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, 
                                     whale_tx = get_transaction(transactions, event_w["transactionHash"])
                                     tx2      = get_transaction(transactions, event_a2["transactionHash"])
 
-                                    if (tx1["from"]     != whale_tx["from"]     and tx2["from"]     != whale_tx["from"] and
-                                        tx1["gasPrice"]  > whale_tx["gasPrice"] and tx2["gasPrice"] <= whale_tx["gasPrice"]):
+                                    if  (tx1["from"] != whale_tx["from"] and tx2["from"] != whale_tx["from"]) and \
+                                        ((tx1["gasPrice"]  > whale_tx["gasPrice"] and tx2["gasPrice"] <= whale_tx["gasPrice"]) or \
+                                         (tx1["transactionIndex"] + 1 == whale_tx["transactionIndex"] and whale_tx["transactionIndex"] == tx2["transactionIndex"] - 1)):
 
                                         if tx1["to"] == whale_tx["to"] == tx2["to"] and tx1["from"] != tx2["from"]:
                                             continue
@@ -149,21 +150,166 @@ def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, 
                                         if not exchange_name:
                                             exchange_name = exchange_address
 
-                                        attackers.add(event_a1["transactionHash"].hex())
-                                        attackers.add(event_a2["transactionHash"].hex())
+                                        receipt1 = w3.eth.getTransactionReceipt(tx1["hash"])
+                                        cost1 = receipt1["gasUsed"]*tx1["gasPrice"]
+                                        receipt2 = w3.eth.getTransactionReceipt(tx2["hash"])
+                                        cost2 = receipt2["gasUsed"]*tx2["gasPrice"]
+                                        total_cost = cost1+cost2
 
-                                        print("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-                                        print("   Index Block Number \t Transaction Hash \t\t\t\t\t\t\t From \t\t\t\t\t\t To \t\t\t\t\t\t Gas Price \t Exchange (Token)")
-                                        print("1. "+str(tx1["transactionIndex"])+" \t "+str(tx1["blockNumber"])+" \t "+tx1["hash"].hex()+" \t "+tx1["from"]+" \t "+tx1["to"]+" \t "+str(tx1["gasPrice"]))
-                                        print(colors.INFO+"W: "+str(whale_tx["transactionIndex"])+" \t "+str(whale_tx["blockNumber"])+" \t "+whale_tx["hash"].hex()+" \t "+whale_tx["from"]+" \t "+whale_tx["to"]+" \t "+str(whale_tx["gasPrice"])+" \t "+exchange_name+" ("+token_name+")"+colors.END)
-                                        print("2. "+str(tx2["transactionIndex"])+" \t "+str(tx2["blockNumber"])+" \t "+tx2["hash"].hex()+" \t "+tx2["from"]+" \t "+tx2["to"]+" \t "+str(tx2["gasPrice"]))
-                                        print("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                                        gain = None
+                                        eth_spent, eth_received, eth_whale = 0, 0, 0
+                                        tx1_event, tx2_event, whale_event = None, None, None
+                                        for transfer_event in token_transfer_events:
+                                            if   (not tx1_event and transfer_event["transactionHash"] == tx1["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
+                                                  not tx1_event and transfer_event["transactionHash"] == tx1["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
+                                                tx1_event = transfer_event
+                                            elif (not tx2_event and transfer_event["transactionHash"] == tx2["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
+                                                  not tx2_event and transfer_event["transactionHash"] == tx2["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
+                                                tx2_event = transfer_event
+                                            elif (not whale_event and transfer_event["transactionHash"] == whale_tx["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
+                                                  not whale_event and transfer_event["transactionHash"] == whale_tx["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
+                                                whale_event = transfer_event
+                                            if tx1_event and tx2_event and whale_event:
+                                                break
+                                        if tx1_event and tx2_event and whale_event:
+                                            eth_spent = int(tx1_event["data"].replace("0x", "")[0:64], 16)
+                                            eth_received = int(tx2_event["data"].replace("0x", "")[0:64], 16)
+                                            eth_whale = int(whale_event["data"].replace("0x", "")[0:64], 16)
+                                            gain = eth_received - eth_spent
+                                        else:
+                                            exchange_events = []
+                                            exchange_events += w3.eth.filter({"fromBlock": block_number, "toBlock": block_number, "topics": [TOKEN_PURCHASE]}).get_all_entries()
+                                            exchange_events += w3.eth.filter({"fromBlock": block_number, "toBlock": block_number, "topics": [ETH_PURCHASE]}).get_all_entries()
+                                            for exchange_event in exchange_events:
+                                                if   exchange_event["transactionHash"] == tx1["hash"]:
+                                                    tx1_event = exchange_event
+                                                elif exchange_event["transactionHash"] == tx2["hash"]:
+                                                    tx2_event = exchange_event
+                                                elif exchange_event["transactionHash"] == whale_tx["hash"]:
+                                                    whale_event = exchange_event
+                                                if tx1_event and tx2_event and whale_event:
+                                                    break
+                                            if tx1_event and tx2_event and tx1_event["address"] == tx2_event["address"] and tx1_event["topics"][0].hex() == TOKEN_PURCHASE and tx2_event["topics"][0].hex() == ETH_PURCHASE:
+                                                eth_spent = int(tx1_event["topics"][2].hex(), 16)
+                                                eth_received = int(tx2_event["topics"][3].hex(), 16)
+                                                eth_whale = int(tx1_event["topics"][2].hex(), 16)
+                                                gain = eth_received - eth_spent
 
-                                        result = dict()
-                                        result["attacker_tx_1"] = tx1
-                                        result["attacker_tx_2"] = tx2
-                                        result["victim_tx"] = whale_tx
-                                        results.append(result)
+                                        if gain != None:
+                                            attackers.add(event_a1["transactionHash"].hex())
+                                            attackers.add(event_a2["transactionHash"].hex())
+
+                                            print("   Index Block Number \t Transaction Hash \t\t\t\t\t\t\t From \t\t\t\t\t\t To \t\t\t\t\t\t Gas Price \t Exchange (Token)")
+                                            print("1. "+str(tx1["transactionIndex"])+" \t "+str(tx1["blockNumber"])+" \t "+tx1["hash"].hex()+" \t "+tx1["from"]+" \t "+tx1["to"]+" \t "+str(tx1["gasPrice"]))
+                                            print(colors.INFO+"W: "+str(whale_tx["transactionIndex"])+" \t "+str(whale_tx["blockNumber"])+" \t "+whale_tx["hash"].hex()+" \t "+whale_tx["from"]+" \t "+whale_tx["to"]+" \t "+str(whale_tx["gasPrice"])+" \t "+exchange_name+" ("+token_name+")"+colors.END)
+                                            print("2. "+str(tx2["transactionIndex"])+" \t "+str(tx2["blockNumber"])+" \t "+tx2["hash"].hex()+" \t "+tx2["from"]+" \t "+tx2["to"]+" \t "+str(tx2["gasPrice"]))
+
+                                            print("Cost: "+str(Web3.fromWei(total_cost, 'ether'))+" ETH")
+
+                                            if gain > 0:
+                                                print("Gain: "+str(Web3.fromWei(gain, 'ether'))+" ETH")
+                                            else:
+                                                print("Gain: -"+str(Web3.fromWei(abs(gain), 'ether'))+" ETH")
+
+                                            profit = gain - total_cost
+                                            block = w3.eth.getBlock(block_number)
+                                            one_eth_to_usd_price = decimal.Decimal(float(get_one_eth_to_usd(block["timestamp"], prices)))
+                                            if profit >= 0:
+                                                profit_usd = Web3.fromWei(profit, 'ether') * one_eth_to_usd_price
+                                                print(colors.OK+"Profit: "+str(Web3.fromWei(profit, 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
+                                            else:
+                                                profit_usd = -Web3.fromWei(abs(profit), 'ether') * one_eth_to_usd_price
+                                                print(colors.FAIL+"Profit: -"+str(Web3.fromWei(abs(profit), 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
+
+                                            # Save finding to results
+                                            tx1 = dict(tx1)
+                                            del tx1["blockNumber"]
+                                            del tx1["blockHash"]
+                                            del tx1["r"]
+                                            del tx1["s"]
+                                            del tx1["v"]
+                                            tx1["value"] = str(tx1["value"])
+                                            tx1["hash"] = tx1["hash"].hex()
+
+                                            whale_tx = dict(whale_tx)
+                                            del whale_tx["blockNumber"]
+                                            del whale_tx["blockHash"]
+                                            del whale_tx["r"]
+                                            del whale_tx["s"]
+                                            del whale_tx["v"]
+                                            whale_tx["value"] = str(whale_tx["value"])
+                                            whale_tx["hash"] = whale_tx["hash"].hex()
+
+                                            tx2 = dict(tx2)
+                                            del tx2["blockNumber"]
+                                            del tx2["blockHash"]
+                                            del tx2["r"]
+                                            del tx2["s"]
+                                            del tx2["v"]
+                                            tx2["value"] = str(tx2["value"])
+                                            tx2["hash"] = tx2["hash"].hex()
+
+                                            if gain >= 0:
+                                                gain = Web3.fromWei(gain, 'ether')
+                                            else:
+                                                gain = -Web3.fromWei(abs(gain), 'ether')
+
+                                            if profit >= 0:
+                                                profit = Web3.fromWei(profit, 'ether')
+                                            else:
+                                                profit = -Web3.fromWei(abs(profit), 'ether')
+
+                                            interface = "bot"
+                                            if (tx1["to"] == whale_tx["to"] == tx2["to"] or
+                                                _to_a1 == tx1["from"] and _from_a2 == tx2["from"]):
+                                                interface = "exchange"
+
+                                            bot_address = None
+                                            if interface == "bot" and _from_a2 == _to_a1:
+                                                bot_address = _to_a1
+
+                                            same_sender = False
+                                            if tx1["from"] == tx2["from"]:
+                                                same_sender = True
+
+                                            same_receiver = False
+                                            if tx1["to"] == tx2["to"]:
+                                                same_receiver = True
+
+                                            same_token_amount = False
+                                            if _value_a1 == _value_a2:
+                                                same_token_amount = True
+
+                                            finding = {
+                                                "block_number": block_number,
+                                                "block_timestamp": block["timestamp"],
+                                                "first_transaction": tx1,
+                                                "whale_transaction": whale_tx,
+                                                "second_transaction": tx2,
+                                                "eth_usd_price": float(one_eth_to_usd_price),
+                                                "cost_eth": float(Web3.fromWei(total_cost, 'ether')),
+                                                "cost_usd": float(Web3.fromWei(total_cost, 'ether') * one_eth_to_usd_price),
+                                                "gain_eth": float(gain),
+                                                "gain_usd": float(gain * one_eth_to_usd_price),
+                                                "profit_eth": float(profit),
+                                                "profit_usd": float(profit_usd),
+                                                "exchange_address": exchange_address,
+                                                "exchange_name": exchange_name,
+                                                "token_address": token_address,
+                                                "token_name": token_name,
+                                                "first_transaction_eth_amount": str(eth_spent),
+                                                "whale_transaction_eth_amount": str(eth_whale),
+                                                "second_transaction_eth_amount": str(eth_received),
+                                                "first_transaction_token_amount": str(_value_a1),
+                                                "whale_transaction_token_amount": str(_value_w),
+                                                "second_transaction_token_amount": str(_value_a2),
+                                                "interface": interface,
+                                                "bot_address": bot_address,
+                                                "same_sender": same_sender,
+                                                "same_receiver": same_receiver,
+                                                "same_token_amount": same_token_amount
+                                            }
+                                            results.append(finding)
 
                     transfer_to[event["address"]+_to] = event
                     if event["address"] not in asset_transfers:
@@ -206,10 +352,9 @@ def main():
             execution_times.append(time.time() - start)
             continue
         block = w3.eth.getBlock(block_number, True)
-        execution_times.append(analyze_block_for_insertion(w3, block, block.transactions, token_transfer_events, uniswap_purchase_events))
+        prices = get_prices()
+        execution_times.append(analyze_block_for_insertion(w3, block, block.transactions, token_transfer_events, uniswap_purchase_events, prices))
     end_total = time.time()
-    print(len(token_transfer_events))
-    print(len(uniswap_purchase_events))
     print("Total execution time: "+str(end_total - start_total))
     print()
 
