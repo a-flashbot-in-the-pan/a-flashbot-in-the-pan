@@ -195,6 +195,7 @@ let
 
       pandas
       web3
+      pymongo
     ];
 in mkShell rec {
   venvDir = "./.venv";

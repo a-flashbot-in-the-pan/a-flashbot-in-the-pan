@@ -1,5 +1,19 @@
 # Frontrunning-Mitigation
 
+## `mev_analyzer` tool
+If using Infura, instead of an archive node, you must set the following
+environment variables
+``` shell
+export WEB3_INFURA_PROJECT_ID="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+export WEB3_INFURA_API_SECRET="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+```
+
+To use an archive node as a provider set the following variable instead of the
+above ones
+``` shell
+export WEB3_PROVIDER_URI="wss://<HOST>:<PORT>"
+```
+
 
 ## Installation Instructions
 

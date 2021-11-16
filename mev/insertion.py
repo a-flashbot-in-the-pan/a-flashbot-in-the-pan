@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from argparse import ArgumentParser
 import os
 import sys
 import time
@@ -10,12 +11,15 @@ import pymongo
 import requests
 import multiprocessing
 
-from web3 import Web3
-
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
-from utils.settings import *
-from utils.utils import colors, get_prices, get_one_eth_to_usd
+from .utils.settings import *
+from .utils.utils import colors, get_prices, get_one_eth_to_usd
+
+if os.getenv("WEB3_INFURA_PROJECT_ID"):
+    from web3.auto.infura import w3
+else:
+    from web3.auto import w3
 
 TOKEN_AMOUNT_DELTA = 0.01 # Maximum difference between buying and selling amount of tokens. Default value is 1%.
 
@@ -317,20 +321,8 @@ def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, 
                     asset_transfers[event["address"]].append(event)
     return results
 
-def main():
-    if len(sys.argv) != 2:
-        print(colors.FAIL+"Error: Please provide a block range to be analyzed: 'python3 "+sys.argv[0]+" <BLOCK_RANGE_START>:<BLOCK_RANGE_END>'"+colors.END)
-        sys.exit(-1)
-    if not ":" in sys.argv[1]:
-        print(colors.FAIL+"Error: Please provide a valid block range: 'python3 "+sys.argv[0]+" <BLOCK_RANGE_START>:<BLOCK_RANGE_END>'"+colors.END)
-        sys.exit(-2)
-    block_range_start, block_range_end = sys.argv[1].split(":")[0], sys.argv[1].split(":")[1]
-    if not block_range_start.isnumeric() or not block_range_end.isnumeric():
-        print(colors.FAIL+"Error: Please provide integers as block range: 'python3 "+sys.argv[0]+" <BLOCK_RANGE_START>:<BLOCK_RANGE_END>'"+colors.END)
-        sys.exit(-3)
-    block_range_start, block_range_end = int(block_range_start), int(block_range_end)
-
-    w3 = Web3(PROVIDER)
+def main(block_range_start, block_range_end):
+    import pdb; pdb.set_trace()
     if w3.isConnected():
         print("Connected to "+w3.clientVersion)
     else:
@@ -358,5 +350,21 @@ def main():
     print("Total execution time: "+str(end_total - start_total))
     print()
 
+def main_args(args):
+    main(args.block_range_start, args.block_range_end)
+
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser()
+    parser.add_argument(
+        "block_range_start",
+        type=int,
+        help="The first block in the block range to analyze",
+    )
+    parser.add_argument(
+        "block_range_end",
+        type=int,
+        help="The last block in the block range to analyze",
+    )
+
+    args = parser.parse_args()
+    main(args.block_range_start, args.block_range_end)
