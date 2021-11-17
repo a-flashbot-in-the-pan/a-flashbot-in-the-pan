@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from argparse import ArgumentParser
+import logging
 import os
 import sys
 import time
@@ -14,7 +15,9 @@ import multiprocessing
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 from .utils.settings import *
-from .utils.utils import colors, get_prices, get_one_eth_to_usd
+from .utils.utils import colors, get_prices, get_one_eth_to_usd, TRANSFER, TOKEN_PURCHASE, ETH_PURCHASE
+
+log = logging.getLogger(__name__)
 
 if os.getenv("WEB3_INFURA_PROJECT_ID"):
     from web3.auto.infura import w3
@@ -23,10 +26,6 @@ else:
 
 TOKEN_AMOUNT_DELTA = 0.01 # Maximum difference between buying and selling amount of tokens. Default value is 1%.
 
-TRANSFER       = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" # ERC20 "Transfer"
-TOKEN_PURCHASE = "0xcd60aa75dea3072fbc07ae6d7d856b5dc5f4eee88854f5b4abf7b680ef8bc50f" # Uniswap V1 "TokenPurchase"
-ETH_PURCHASE   = "0x7f4091b46c33e918a0f3aa42307641d17bb67029427a5369e54b353984238705" # Uniswap V1 "ETHPurchase"
-
 def get_transaction(transactions, transaction_hash):
     for transaction in transactions:
         if transaction.hash == transaction_hash:
@@ -34,7 +33,7 @@ def get_transaction(transactions, transaction_hash):
     return None
 
 def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, uniswap_purchase_events, prices):
-    results = list()
+    insertions = list()
     whales = set()
     attackers = set()
     transfer_to = {}
@@ -203,27 +202,27 @@ def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, 
                                             attackers.add(event_a1["transactionHash"].hex())
                                             attackers.add(event_a2["transactionHash"].hex())
 
-                                            print("   Index Block Number \t Transaction Hash \t\t\t\t\t\t\t From \t\t\t\t\t\t To \t\t\t\t\t\t Gas Price \t Exchange (Token)")
-                                            print("1. "+str(tx1["transactionIndex"])+" \t "+str(tx1["blockNumber"])+" \t "+tx1["hash"].hex()+" \t "+tx1["from"]+" \t "+tx1["to"]+" \t "+str(tx1["gasPrice"]))
-                                            print(colors.INFO+"W: "+str(whale_tx["transactionIndex"])+" \t "+str(whale_tx["blockNumber"])+" \t "+whale_tx["hash"].hex()+" \t "+whale_tx["from"]+" \t "+whale_tx["to"]+" \t "+str(whale_tx["gasPrice"])+" \t "+exchange_name+" ("+token_name+")"+colors.END)
-                                            print("2. "+str(tx2["transactionIndex"])+" \t "+str(tx2["blockNumber"])+" \t "+tx2["hash"].hex()+" \t "+tx2["from"]+" \t "+tx2["to"]+" \t "+str(tx2["gasPrice"]))
+                                            log.info("   Index Block Number \t Transaction Hash \t\t\t\t\t\t\t From \t\t\t\t\t\t To \t\t\t\t\t\t Gas Price \t Exchange (Token)")
+                                            log.info("1. "+str(tx1["transactionIndex"])+" \t "+str(tx1["blockNumber"])+" \t "+tx1["hash"].hex()+" \t "+tx1["from"]+" \t "+tx1["to"]+" \t "+str(tx1["gasPrice"]))
+                                            log.info(colors.INFO+"W: "+str(whale_tx["transactionIndex"])+" \t "+str(whale_tx["blockNumber"])+" \t "+whale_tx["hash"].hex()+" \t "+whale_tx["from"]+" \t "+whale_tx["to"]+" \t "+str(whale_tx["gasPrice"])+" \t "+exchange_name+" ("+token_name+")"+colors.END)
+                                            log.info("2. "+str(tx2["transactionIndex"])+" \t "+str(tx2["blockNumber"])+" \t "+tx2["hash"].hex()+" \t "+tx2["from"]+" \t "+tx2["to"]+" \t "+str(tx2["gasPrice"]))
 
-                                            print("Cost: "+str(Web3.fromWei(total_cost, 'ether'))+" ETH")
+                                            log.info("Cost: "+str(Web3.fromWei(total_cost, 'ether'))+" ETH")
 
                                             if gain > 0:
-                                                print("Gain: "+str(Web3.fromWei(gain, 'ether'))+" ETH")
+                                                log.info("Gain: "+str(Web3.fromWei(gain, 'ether'))+" ETH")
                                             else:
-                                                print("Gain: -"+str(Web3.fromWei(abs(gain), 'ether'))+" ETH")
+                                                log.info("Gain: -"+str(Web3.fromWei(abs(gain), 'ether'))+" ETH")
 
                                             profit = gain - total_cost
                                             block = w3.eth.getBlock(block_number)
                                             one_eth_to_usd_price = decimal.Decimal(float(get_one_eth_to_usd(block["timestamp"], prices)))
                                             if profit >= 0:
                                                 profit_usd = Web3.fromWei(profit, 'ether') * one_eth_to_usd_price
-                                                print(colors.OK+"Profit: "+str(Web3.fromWei(profit, 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
+                                                log.info(colors.OK+"Profit: "+str(Web3.fromWei(profit, 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
                                             else:
                                                 profit_usd = -Web3.fromWei(abs(profit), 'ether') * one_eth_to_usd_price
-                                                print(colors.FAIL+"Profit: -"+str(Web3.fromWei(abs(profit), 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
+                                                log.error(colors.FAIL+"Profit: -"+str(Web3.fromWei(abs(profit), 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
 
                                             # Save finding to results
                                             tx1 = dict(tx1)
@@ -313,25 +312,24 @@ def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, 
                                                 "same_receiver": same_receiver,
                                                 "same_token_amount": same_token_amount
                                             }
-                                            results.append(finding)
+                                            insertions.append(finding)
 
                     transfer_to[event["address"]+_to] = event
                     if event["address"] not in asset_transfers:
                         asset_transfers[event["address"]] = []
                     asset_transfers[event["address"]].append(event)
-    return results
+    return insertions
 
 def main(block_range_start, block_range_end):
-    import pdb; pdb.set_trace()
     if w3.isConnected():
-        print("Connected to "+w3.clientVersion)
+        log.info("Connected to "+w3.clientVersion)
     else:
-        print(colors.FAIL+"Error: Could not connect to the provider!"+colors.END)
+        log.error(colors.FAIL+"Error: Could not connect to the provider!"+colors.END)
 
     start_total = time.time()
     execution_times = list()
     for block_number in range(block_range_start, block_range_end+1):
-        print("Analyzing block number: "+str(block_number))
+        log.info("Analyzing block number: "+str(block_number))
         start = time.time()
         token_transfer_events = []
         uniswap_purchase_events = []
@@ -340,21 +338,28 @@ def main(block_range_start, block_range_end):
             uniswap_purchase_events += w3.eth.filter({"fromBlock": block_number, "toBlock": block_number, "topics": [TOKEN_PURCHASE]}).get_all_entries()
             uniswap_purchase_events += w3.eth.filter({"fromBlock": block_number, "toBlock": block_number, "topics": [ETH_PURCHASE]}).get_all_entries()
         except Exception as e:
-            print(colors.FAIL+"Error: "+str(e)+", block number: "+str(block_number)+colors.END)
+            log.error(colors.FAIL+"Error: "+str(e)+", block number: "+str(block_number)+colors.END)
             execution_times.append(time.time() - start)
             continue
         block = w3.eth.getBlock(block_number, True)
         prices = get_prices()
         execution_times.append(analyze_block_for_insertion(w3, block, block.transactions, token_transfer_events, uniswap_purchase_events, prices))
     end_total = time.time()
-    print("Total execution time: "+str(end_total - start_total))
-    print()
+    log.info("Total execution time: %s", str(end_total - start_total))
 
 def main_args(args):
     main(args.block_range_start, args.block_range_end)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        type=str,
+        help="The log level to be written to stdout.",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"],
+    )
     parser.add_argument(
         "block_range_start",
         type=int,
@@ -367,4 +372,5 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    logging.basicConfig(stream=sys.stdout, filemode="w", level=args.log_level.upper())
     main(args.block_range_start, args.block_range_end)
