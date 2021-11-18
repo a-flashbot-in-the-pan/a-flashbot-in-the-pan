@@ -1,5 +1,13 @@
 # Frontrunning-Mitigation
 
+## Installation Instructions
+
+``` shell
+python3 -m pip install -r requirements.txt
+```
+
+A `shell.nix` file has also been provided for those using `nix`.
+
 ## `mev_analyzer` tool
 If using Infura, instead of an archive node, you must set the following
 environment variables
@@ -14,19 +22,28 @@ above ones
 export WEB3_PROVIDER_URI="wss://<HOST>:<PORT>"
 ```
 
+More information on how to run an archive node can be found
+[here](https://docs.ethhub.io/using-ethereum/running-an-ethereum-node/#archive-nodes). 
 
-## Installation Instructions
+### Calculating tips
+The following command calculates the tips accrued in the flashbots block in
+`resources/flashbots-blocks-test.json`. This script writes the output to a csv
+file. To view logging output, include `--log-level
+[DEBUG,INFO,WARN,ERROR,CRITICAL]` after `mev_analyzer` but before `tips`.
 
 ``` shell
-python3 -m pip install -r requirements.txt
+./mev_analyzer tips resources/flashbots-blocks-test.json
 ```
 
-## Running Instructions
+### Detecting insertion
+The insertion detection script can be run like the following. Note that all
+output is written to the logs, so to view output, the log level must be at least
+`INFO`. 
 
-:warning: **!! A connection to a fully synced archive node is required. !!**
+``` shell
+./mev_analyzer --log-level INFO detection <BLOCK_NUM1> <BLOCK_NUM2>
+```
 
-Please update ```utils/settings.py``` with the hostname and port number of your fully synced archive node accordingly.
-More information on how to run an archive node can be found [here](https://docs.ethhub.io/using-ethereum/running-an-ethereum-node/#archive-nodes).
 
 #### Testing Insertion
 
@@ -41,6 +58,5 @@ python3 main.py -b 7100448  # Bancor
 ## TODO's
 
 - [ ] Improve the execution time of executing transactions
-- [ ] Add VDFs
 - [ ] Add support for displacement
 - [ ] Add support for suppression
