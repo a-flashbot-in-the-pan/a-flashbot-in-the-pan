@@ -8,7 +8,7 @@ python3 -m pip install -r requirements.txt
 
 A `shell.nix` file has also been provided for those using `nix`.
 
-## `mev_analyzer` tool
+## `mev` tool
 If using Infura, instead of an archive node, you must set the following
 environment variables
 ``` shell
@@ -30,10 +30,10 @@ The following command calculates the tips accrued in the flashbots block in
 `resources/flashbots-blocks-test.json`. This script writes the output to a csv
 file in `output/tips-<first_block_num>-<last_block_num>.csv`. To view logging
 output, include `--log-level [DEBUG,INFO,WARN,ERROR,CRITICAL]` after
-`mev_analyzer` but before `tips`. 
+`mev` but before `tips`. 
 
 ``` shell
-./mev_analyzer tips resources/flashbots-blocks-test.json
+./mev tips resources/flashbots-blocks-test.json
 ```
 
 ### Detecting insertion
@@ -42,7 +42,7 @@ output is written to the logs, so to view output, the log level must be at least
 `INFO`. 
 
 ``` shell
-./mev_analyzer --log-level INFO detection <BLOCK_NUM1> <BLOCK_NUM2>
+./mev --log-level INFO detection <BLOCK_NUM1> <BLOCK_NUM2>
 ```
 
 

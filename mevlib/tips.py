@@ -3,7 +3,7 @@
 from argparse import ArgumentParser, Namespace
 import logging
 import json
-from mev.insertion import analyze_block_for_insertion
+from mevlib.insertion import analyze_block_for_insertion
 import os
 import sys
 from typing import Dict, List, Union
