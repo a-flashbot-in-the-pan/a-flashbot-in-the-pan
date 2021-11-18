@@ -28,8 +28,9 @@ More information on how to run an archive node can be found
 ### Calculating tips
 The following command calculates the tips accrued in the flashbots block in
 `resources/flashbots-blocks-test.json`. This script writes the output to a csv
-file. To view logging output, include `--log-level
-[DEBUG,INFO,WARN,ERROR,CRITICAL]` after `mev_analyzer` but before `tips`.
+file in `output/tips-<first_block_num>-<last_block_num>.csv`. To view logging
+output, include `--log-level [DEBUG,INFO,WARN,ERROR,CRITICAL]` after
+`mev_analyzer` but before `tips`. 
 
 ``` shell
 ./mev_analyzer tips resources/flashbots-blocks-test.json
@@ -46,7 +47,8 @@ output is written to the logs, so to view output, the log level must be at least
 
 
 #### Testing Insertion
-
+TODO need to update the following to reflect the new syntax (code changes
+probably required). This section will probably get merged with the above.
 ``` shell
 # Examples
 python3 main.py -b 10882755 # Uniswap V2

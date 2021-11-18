@@ -222,7 +222,7 @@ def analyze_block_for_insertion(w3, block, transactions, token_transfer_events, 
                                                 log.info(colors.OK+"Profit: "+str(Web3.fromWei(profit, 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
                                             else:
                                                 profit_usd = -Web3.fromWei(abs(profit), 'ether') * one_eth_to_usd_price
-                                                log.error(colors.FAIL+"Profit: -"+str(Web3.fromWei(abs(profit), 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
+                                                log.info(colors.FAIL+"Profit: -"+str(Web3.fromWei(abs(profit), 'ether'))+" ETH ("+str(profit_usd)+" USD)"+colors.END)
 
                                             # Save finding to results
                                             tx1 = dict(tx1)

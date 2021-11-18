@@ -6,6 +6,8 @@ import time
 import json
 import requests
 
+OUTPUT_DIR = "output"
+
 TRANSFER       = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" # ERC20 "Transfer"
 TOKEN_PURCHASE = "0xcd60aa75dea3072fbc07ae6d7d856b5dc5f4eee88854f5b4abf7b680ef8bc50f" # Uniswap V1 "TokenPurchase"
 ETH_PURCHASE   = "0x7f4091b46c33e918a0f3aa42307641d17bb67029427a5369e54b353984238705" # Uniswap V1 "ETHPurchase"
@@ -15,6 +17,9 @@ class colors:
     OK = '\033[92m'
     FAIL = '\033[91m'
     END = '\033[0m'
+
+def convert_wei_to_eth(wei_amount):
+    return wei_amount / 1e18
 
 def get_prices():
     return requests.get("https://api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1392577232&to="+str(int(time.time()))).json()["prices"]
