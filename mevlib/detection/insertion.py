@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import json
 import numpy
 import decimal
 import pymongo
@@ -12,10 +13,34 @@ import multiprocessing
 
 from web3 import Web3
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+WEB3_WS_PROVIDER = "ws://pf.uni.lux:8546"
 
-from utils.settings import *
-from utils.utils import colors, get_prices, get_one_eth_to_usd
+WEB3_HTTP_RPC_HOST = "pf.uni.lux"
+WEB3_HTTP_RPC_PORT = 8545
+
+MONGO_HOST = "pf.uni.lux"
+MONGO_PORT = 27017
+
+ETHERSCAN_API_KEY = "ANAZQYWNY3ZBIIMIY9P153TE6Y78PUM226"
+
+class colors:
+    INFO = '\033[94m'
+    OK = '\033[92m'
+    FAIL = '\033[91m'
+    END = '\033[0m'
+
+def get_prices():
+    return requests.get("https://api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1392577232&to="+str(int(time.time()))).json()["prices"]
+
+def get_one_eth_to_usd(timestamp, prices):
+    timestamp *= 1000
+    one_eth_to_usd = prices[-1][1]
+    for index, _ in enumerate(prices):
+        if index < len(prices)-1:
+            if prices[index][0] <= timestamp and timestamp <= prices[index+1][0]:
+                return prices[index][1]
+    print("Could not find timestamp. Returning latest price instead.")
+    return one_eth_to_usd
 
 TOKEN_AMOUNT_DELTA = 0.01 # Maximum different between buying and selling amount of tokens. Default value is 1%.
 
@@ -159,12 +184,17 @@ def analyze_block(block_number):
                                             exchange_name = exchange_address
 
                                         # Check if finding is part of a flashbots bundle
-                                        flashbots_blocks = requests.get("https://blocks.flashbots.net/v1/blocks?block_number="+str(block_number)).json()
+                                        flashbots_block = mongo_connection["flashbots"]["all_blocks"].find_one({"block_number": block_number})
                                         flashbots_transactions = set()
-                                        if len(flashbots_blocks["blocks"]) > 0:
-                                            for b in flashbots_blocks["blocks"]:
-                                                for t in b["transactions"]:
-                                                    flashbots_transactions.add(t["transaction_hash"])
+
+                                        """flashbots_response = requests.get("https://blocks.flashbots.net/v1/blocks?block_number="+str(block_number)).json()
+                                        flashbots_transactions = set()
+                                        if len(flashbots_response["blocks"]) > 0:
+                                            flashbots_block = flashbots_response["blocks"][0]"""
+
+                                        if flashbots_block:
+                                            for t in flashbots_block["transactions"]:
+                                                flashbots_transactions.add(t["transaction_hash"])
 
                                         receipt1 = w3.eth.getTransactionReceipt(tx1["hash"])
                                         cost1 = receipt1["gasUsed"] * tx1["gasPrice"]
@@ -179,35 +209,35 @@ def analyze_block(block_number):
 
                                         flashbots_miner = None
                                         if flashbots_bundle:
-                                            flashbots_miner = flashbots_blocks["blocks"][0]["miner"]
+                                            flashbots_miner = flashbots_block["miner"]
 
                                         flashbots_coinbase_transfer = 0
                                         if flashbots_bundle:
-                                            for b in flashbots_blocks["blocks"]:
-                                                for t in b["transactions"]:
-                                                    if t["transaction_hash"] == tx1["hash"].hex() or t["transaction_hash"] == whale_tx["hash"].hex() or t["transaction_hash"] == tx2["hash"].hex():
-                                                        flashbots_coinbase_transfer += int(t["coinbase_transfer"])
+                                            for t in flashbots_block["transactions"]:
+                                                if t["transaction_hash"] == tx1["hash"].hex() or t["transaction_hash"] == whale_tx["hash"].hex() or t["transaction_hash"] == tx2["hash"].hex():
+                                                    flashbots_coinbase_transfer += int(t["coinbase_transfer"])
                                             total_cost += flashbots_coinbase_transfer
 
                                         gain = None
                                         eth_spent, eth_received, eth_whale = 0, 0, 0
                                         tx1_event, tx2_event, whale_event = None, None, None
                                         for transfer_event in events:
-                                            if   (not tx1_event and transfer_event["transactionHash"] == tx1["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
-                                                  not tx1_event and transfer_event["transactionHash"] == tx1["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
-                                                tx1_event = transfer_event
-                                            elif (not tx2_event and transfer_event["transactionHash"] == tx2["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
-                                                  not tx2_event and transfer_event["transactionHash"] == tx2["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
-                                                tx2_event = transfer_event
-                                            elif (not whale_event and transfer_event["transactionHash"] == whale_tx["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
-                                                  not whale_event and transfer_event["transactionHash"] == whale_tx["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
-                                                whale_event = transfer_event
-                                            if tx1_event and tx2_event and whale_event:
-                                                break
+                                            if   (transfer_event["transactionHash"] == tx1["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
+                                                  transfer_event["transactionHash"] == tx1["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
+                                                if int(transfer_event["data"].replace("0x", "")[0:64], 16) > eth_spent:
+                                                    tx1_event = transfer_event
+                                                    eth_spent = int(tx1_event["data"].replace("0x", "")[0:64], 16)
+                                            elif (transfer_event["transactionHash"] == tx2["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
+                                                  transfer_event["transactionHash"] == tx2["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
+                                                if int(transfer_event["data"].replace("0x", "")[0:64], 16) > eth_received:
+                                                    tx2_event = transfer_event
+                                                    eth_received = int(tx2_event["data"].replace("0x", "")[0:64], 16)
+                                            elif (transfer_event["transactionHash"] == whale_tx["hash"] and transfer_event["address"] == "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" or # Wrapped ETH
+                                                  transfer_event["transactionHash"] == whale_tx["hash"] and transfer_event["address"] == "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"):  # Bancor ETH Token
+                                                if int(transfer_event["data"].replace("0x", "")[0:64], 16) > eth_whale:
+                                                    whale_event = transfer_event
+                                                    eth_whale = int(whale_event["data"].replace("0x", "")[0:64], 16)
                                         if tx1_event and tx2_event and whale_event:
-                                            eth_spent = int(tx1_event["data"].replace("0x", "")[0:64], 16)
-                                            eth_received = int(tx2_event["data"].replace("0x", "")[0:64], 16)
-                                            eth_whale = int(whale_event["data"].replace("0x", "")[0:64], 16)
                                             gain = eth_received - eth_spent
                                         else:
                                             exchange_events = []
@@ -216,8 +246,10 @@ def analyze_block(block_number):
                                             for exchange_event in exchange_events:
                                                 if   exchange_event["transactionHash"] == tx1["hash"]:
                                                     tx1_event = exchange_event
+                                                    print("tx1_event", int(tx1_event["topics"][2].hex(), 16))
                                                 elif exchange_event["transactionHash"] == tx2["hash"]:
                                                     tx2_event = exchange_event
+                                                    print("tx2_event", int(tx2_event["topics"][2].hex(), 16))
                                                 elif exchange_event["transactionHash"] == whale_tx["hash"]:
                                                     whale_event = exchange_event
                                                 if tx1_event and tx2_event and whale_event:
