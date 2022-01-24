@@ -223,6 +223,7 @@ mkShell rec {
     nodePackages.pyright
     hello
     bashInteractive
+    mongodb-tools
 
     # Python development
     (python.withPackages pythonPackages)
