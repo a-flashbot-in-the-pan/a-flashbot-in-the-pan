@@ -9,16 +9,13 @@ import subprocess
 MONGO_HOST = "pf.uni.lux"
 MONGO_PORT = 27017
 
-MAX_BLOCK_RANGE = 13700000
+MAX_BLOCK_RANGE = 14000000
 
 def main():
     # Download latest "all_blocks" file
     subprocess.run(["rm", "all_blocks"])
     subprocess.run(["wget", "https://blocks.flashbots.net/v1/all_blocks"])
     # Insert new data
-    print("Connecting to MongoDB...")
-    mongo_connection = pymongo.MongoClient("mongodb://"+MONGO_HOST+":"+str(MONGO_PORT), maxPoolSize=None)
-    collection = mongo_connection["flashbots"]["all_blocks"]
     print("Loading all blocks into memory...")
     with open("all_blocks", "r") as f:
         all_blocks = json.load(f)
@@ -33,6 +30,9 @@ def main():
         print("Smallest flashbots block:", min)
         print("Largest flashbots block:", max)
     # Crawl the API for latest blocks
+    print("Connecting to MongoDB...")
+    mongo_connection = pymongo.MongoClient("mongodb://"+MONGO_HOST+":"+str(MONGO_PORT), maxPoolSize=None)
+    collection = mongo_connection["flashbots"]["all_blocks"]
     before = MAX_BLOCK_RANGE + 1
     while True:
         print("Requesting:", "https://blocks.flashbots.net/v1/blocks?before="+str(before)+"&limit=10000")
