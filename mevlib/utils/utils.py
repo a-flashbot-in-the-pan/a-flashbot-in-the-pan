@@ -1,16 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
+import logging
 import os
 import time
-import json
 import requests
+
+from pymongo import MongoClient
+from pymongo.collection import Collection
 
 OUTPUT_DIR = "output"
 
 TRANSFER       = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" # ERC20 "Transfer"
 TOKEN_PURCHASE = "0xcd60aa75dea3072fbc07ae6d7d856b5dc5f4eee88854f5b4abf7b680ef8bc50f" # Uniswap V1 "TokenPurchase"
 ETH_PURCHASE   = "0x7f4091b46c33e918a0f3aa42307641d17bb67029427a5369e54b353984238705" # Uniswap V1 "ETHPurchase"
+
+MONGODB_ENDPOINT = os.getenv("MONGODB_ENDPOINT")
+MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD")
+MONGODB_USERNAME = os.getenv("MONGODB_USERNAME")
+
+log = logging.getLogger(__name__)
 
 class colors:
     INFO = '\033[94m'
@@ -49,3 +59,11 @@ def request_debug_trace(connection, transaction_hash, custom_tracer=True, reques
     if response.status == 200 and response.reason == "OK":
         return json.loads(response.read())
     return {"error": {"status": response.status, "reason": response.reason, "data": response.read().decode()}}
+
+
+
+def connect_to_mongodb():
+    log.info("Connecting to MongoDB")
+    return MongoClient(
+        MONGODB_ENDPOINT, username=MONGODB_USERNAME, password=MONGODB_PASSWORD
+    )

@@ -224,6 +224,7 @@ mkShell rec {
     hello
     bashInteractive
     mongodb-tools
+    jupyter
 
     # Python development
     (python.withPackages pythonPackages)
