@@ -7,6 +7,7 @@ import sys
 import mevlib.analyze
 import mevlib.insertion
 import mevlib.tips
+import mevlib.flashbots
 
 log = logging.getLogger(__name__)
 
@@ -61,11 +62,12 @@ def parse_args():
         type=str,
         help="Path to CSV file containing extracted MEV transactions.",
     )
-    # parser_detection.add_argument(
-    #     "block_range_end",
-    #     type=int,
-    #     help="The last block in the block range to analyze",
-    # )
+
+
+    parser_flashbots = subparsers.add_parser(
+        "flashbots", help="For parsing and analyzing flashbots transactions."
+    )
+    parser_flashbots.set_defaults(func=mevlib.flashbots.main_flashbots)
 
     return parser.parse_args()
 
