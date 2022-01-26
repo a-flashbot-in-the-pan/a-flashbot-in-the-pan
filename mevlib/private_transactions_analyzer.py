@@ -94,10 +94,10 @@ def analyze_block(block_number):
 
             if tx["hash"].hex() in flashbots_transactions:
                 private_transaction["flashbots_transaction"] = True
-                print(colors.INFO+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+tx["to"]+' (F) Miner: '+miner+colors.END)
+                print(colors.INFO+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+str(tx["to"])+' (F) Miner: '+miner+colors.END)
             else:
                 private_transaction["flashbots_transaction"] = False
-                print(colors.FAIL+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+tx["to"]+' (U) miner: '+miner+colors.END)
+                print(colors.FAIL+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+str(tx["to"])+' (U) miner: '+miner+colors.END)
             finding["privateTransactions"].append(private_transaction)
 
     if finding:
