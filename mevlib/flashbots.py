@@ -67,13 +67,6 @@ def get_tx_ids(mev_attempt):
     )
 
 
-def get_db_and_collection():
-    log.info("Connecting to MongoDB")
-    client = MongoClient(
-        MONGODB_ENDPOINT, username=MONGODB_USERNAME, password=MONGODB_PASSWORD
-    )
-    log.debug("Retieving DB object and collection object")
-    return (client.flashbots, client.flashbots.confirmed_mevs)
 
 
 def extract_mev_tx_ids(mev_attempts: Collection):
@@ -83,9 +76,22 @@ def extract_mev_tx_ids(mev_attempts: Collection):
         yield from get_tx_ids(mev_attempt)
 
 
+def count_flashbots_txs(mev_attempts: Collection):
+    return (
+        mev_attempts.count_documents({"flashbots_bundle": True}),
+        mev_attempts.count_documents({"flashbots_bundle": False}),
+    )
+
+
 def main_flashbots(args):
     logging.basicConfig(stream=sys.stdout, filemode="w", level=args.log_level.upper())
-    db, measured_mev_attempts = get_db_and_collection()
+    db = get_db()
+
+    flashbots_txs, non_flashbots_txs = count_flashbots_txs(db.confirmed_mevs)
+
+    import pdb
+
+    pdb.set_trace()
     # measured_mev_attempts = collection.find_one()
     # fb = get_flashbots_blocks(fb_blocks_file="resources/all_blocks.1-25-22.json")
 

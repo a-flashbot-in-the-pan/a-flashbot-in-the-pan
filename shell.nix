@@ -198,6 +198,7 @@ let
 
       argcomplete
       pandas
+      numpy
       web3
       pymongo
       seaborn
