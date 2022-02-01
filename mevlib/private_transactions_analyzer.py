@@ -38,7 +38,7 @@ def analyze_block(block_number):
     finding = None
     for i in range(len(block["transactions"])):
         tx = block["transactions"][i]
-        found = mongo_connection["flashbots"]["observed_transactions_test"].find_one({"hash": tx["hash"].hex()})
+        found = mongo_connection["flashbots"]["observed_transactions"].find_one({"hash": tx["hash"].hex()})
         if not found:
             if not flashbots_block_retrieved:
                 flashbots_block = mongo_connection["flashbots"]["all_blocks"].find_one({"block_number": block_number})
@@ -94,10 +94,12 @@ def analyze_block(block_number):
 
             if tx["hash"].hex() in flashbots_transactions:
                 private_transaction["flashbots_transaction"] = True
-                print(colors.INFO+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+str(tx["to"])+' (F) Miner: '+miner+colors.END)
+                if debug:
+                    print(colors.INFO+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+str(tx["to"])+' (F) Miner: '+miner+colors.END)
             else:
                 private_transaction["flashbots_transaction"] = False
-                print(colors.FAIL+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+str(tx["to"])+' (U) miner: '+miner+colors.END)
+                if debug:
+                    print(colors.FAIL+str(tx["transactionIndex"])+' '+tx["hash"].hex()+' From: '+tx["from"]+' To: '+str(tx["to"])+' (U) miner: '+miner+colors.END)
             finding["privateTransactions"].append(private_transaction)
 
     if finding:
@@ -118,6 +120,7 @@ def analyze_block(block_number):
 
 def init_process():
     global w3
+    global debug
     global mongo_connection
 
     w3 = Web3(Web3.HTTPProvider("http://"+WEB3_HTTP_RPC_HOST+":"+str(WEB3_HTTP_RPC_PORT)))
@@ -125,6 +128,7 @@ def init_process():
         print("Connected worker to "+w3.clientVersion)
     else:
         print(colors.FAIL+"Error: Could not connect to "+WEB3_HTTP_RPC_HOST+":"+str(WEB3_HTTP_RPC_PORT)+colors.END)
+    debug = False
     mongo_connection = pymongo.MongoClient("mongodb://"+MONGO_HOST+":"+str(MONGO_PORT), maxPoolSize=None)
 
 def main():
