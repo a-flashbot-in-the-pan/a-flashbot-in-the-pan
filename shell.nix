@@ -224,6 +224,7 @@ mkShell rec {
     nodePackages.pyright
     hello
     bashInteractive
+    mongodb
     mongodb-tools
     jupyter
 
