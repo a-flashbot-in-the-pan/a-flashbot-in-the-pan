@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-nohup python3 insertion.py 10000000:13700000 &> insertion.log&
+nohup python3.8 insertion.py 10000000:14444725 &> insertion.log&
