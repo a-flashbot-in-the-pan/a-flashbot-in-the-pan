@@ -27,7 +27,7 @@ def analyze_block(block_number):
     start = time.time()
 
     print("Analyzing block number:", block_number)
-    found = mongo_connection["flashbots"]["private_transactions"].find_one({"number": block_number})
+    found = mongo_connection["flashbots"]["private_blocks"].find_one({"number": block_number})
     if found:
         print("Block "+str(block_number)+" already analyzed!")
         return time.time() - start
@@ -41,7 +41,7 @@ def analyze_block(block_number):
         found = mongo_connection["flashbots"]["observed_transactions"].find_one({"hash": tx["hash"].hex()})
         if not found:
             if not flashbots_block_retrieved:
-                flashbots_block = mongo_connection["flashbots"]["all_blocks"].find_one({"block_number": block_number})
+                flashbots_block = mongo_connection["flashbots"]["flashbots_blocks"].find_one({"block_number": block_number})
                 flashbots_block_retrieved = True
                 if flashbots_block:
                     for t in flashbots_block["transactions"]:
@@ -103,7 +103,7 @@ def analyze_block(block_number):
             finding["privateTransactions"].append(private_transaction)
 
     if finding:
-        collection = mongo_connection["flashbots"]["private_transactions"]
+        collection = mongo_connection["flashbots"]["private_blocks"]
         collection.insert_one(finding)
         # Indexing...
         if 'number' not in collection.index_information():
@@ -128,7 +128,7 @@ def init_process():
         print("Connected worker to "+w3.clientVersion)
     else:
         print(colors.FAIL+"Error: Could not connect to "+WEB3_HTTP_RPC_HOST+":"+str(WEB3_HTTP_RPC_PORT)+colors.END)
-    debug = False
+    debug = True
     mongo_connection = pymongo.MongoClient("mongodb://"+MONGO_HOST+":"+str(MONGO_PORT), maxPoolSize=None)
 
 def main():
@@ -154,8 +154,8 @@ def main():
         print(colors.INFO+"(F) = Flashbots Transaction"+colors.END)
         print(colors.FAIL+"(U) = Unknown Private Transaction"+colors.END)
         mongo_connection = pymongo.MongoClient("mongodb://"+MONGO_HOST+":"+str(MONGO_PORT), maxPoolSize=None)
-        print("Flashbots min block number:", mongo_connection["flashbots"]["all_blocks"].find_one(sort=[("block_number", +1)])["block_number"])
-        print("Flashbots max block number:", mongo_connection["flashbots"]["all_blocks"].find_one(sort=[("block_number", -1)])["block_number"])
+        print("Flashbots min block number:", mongo_connection["flashbots"]["flashbots_blocks"].find_one(sort=[("block_number", +1)])["block_number"])
+        print("Flashbots max block number:", mongo_connection["flashbots"]["flashbots_blocks"].find_one(sort=[("block_number", -1)])["block_number"])
         start_total = time.time()
         execution_times += pool.map(analyze_block, range(block_range_start, block_range_end+1))
         end_total = time.time()

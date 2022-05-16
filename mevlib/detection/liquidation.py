@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import json
+import copy
 import numpy
 import decimal
 import pymongo
@@ -13,7 +14,7 @@ import multiprocessing
 
 from web3 import Web3
 
-WEB3_HTTP_RPC = "http://pf.uni.lux:8547"
+PROVIDER = Web3.HTTPProvider("http://pf.uni.lux:8545")
 
 MONGO_HOST = "pf.uni.lux"
 MONGO_PORT = 27017
@@ -379,6 +380,11 @@ def analyze_block(block_number):
             _amount = int(event["data"].replace("0x", "")[3*64:3*64+64], 16)
             if _market in flash_loans[event["transactionIndex"]] and flash_loans[event["transactionIndex"]][_market]["platform"] == "dYdX" and flash_loans[event["transactionIndex"]][_market]["fee"] == None:
                 flash_loans[event["transactionIndex"]][_market]["fee"] = _amount - flash_loans[event["transactionIndex"]][_market]["amount"]
+        flash_loans_copy = copy.deepcopy(flash_loans)
+        for transaction_index in flash_loans_copy:
+            for market in flash_loans_copy[transaction_index]:
+                if flash_loans_copy[transaction_index][market]["fee"] == None:
+                    del flash_loans[transaction_index][market]
 
     except Exception as e:
         import traceback
@@ -405,7 +411,7 @@ def analyze_block(block_number):
                 tx = w3.eth.getTransaction(transaction_index_to_hash[tx_index])
                 receipt = w3.eth.getTransactionReceipt(tx["hash"])
                 cost = receipt["gasUsed"] * tx["gasPrice"]
-                # Check if arbitrage is part of a flashbots bundle
+                # Check if liquidation is part of a flashbots bundle
                 flashbots_block = mongo_connection["flashbots"]["flashbots_blocks"].find_one({"block_number": block_number})
                 flashbots_transactions = set()
                 if flashbots_block:
@@ -599,11 +605,11 @@ def init_process(_prices, _coin_list):
     global coin_list
     global mongo_connection
 
-    w3 = Web3(Web3.HTTPProvider(WEB3_HTTP_RPC))
+    w3 = Web3(PROVIDER)
     if w3.isConnected():
         print("Connected worker to "+w3.clientVersion)
     else:
-        print(colors.FAIL+"Error: Could not connect to "+WEB3_HTTP_RPC+colors.END)
+        print(colors.FAIL+"Error: Could not connect to Ethereum client. Please check the provider!"+colors.END)
     prices = _prices
     coin_list = _coin_list
     mongo_connection = pymongo.MongoClient("mongodb://"+MONGO_HOST+":"+str(MONGO_PORT), maxPoolSize=None)

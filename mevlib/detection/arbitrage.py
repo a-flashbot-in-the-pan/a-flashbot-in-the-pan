@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import json
+import copy
 import numpy
 import decimal
 import pymongo
@@ -13,7 +14,7 @@ import multiprocessing
 
 from web3 import Web3
 
-WEB3_HTTP_RPC = "http://pf.uni.lux:8545"
+PROVIDER = Web3.HTTPProvider("http://pf.uni.lux:8545")
 
 MONGO_HOST = "pf.uni.lux"
 MONGO_PORT = 27017
@@ -458,6 +459,11 @@ def analyze_block(block_number):
             _amount = int(event["data"].replace("0x", "")[3*64:3*64+64], 16)
             if _market in flash_loans[event["transactionIndex"]] and flash_loans[event["transactionIndex"]][_market]["platform"] == "dYdX" and flash_loans[event["transactionIndex"]][_market]["fee"] == None:
                 flash_loans[event["transactionIndex"]][_market]["fee"] = _amount - flash_loans[event["transactionIndex"]][_market]["amount"]
+        flash_loans_copy = copy.deepcopy(flash_loans)
+        for transaction_index in flash_loans_copy:
+            for market in flash_loans_copy[transaction_index]:
+                if flash_loans_copy[transaction_index][market]["fee"] == None:
+                    del flash_loans[transaction_index][market]
 
     except Exception as e:
         import traceback
@@ -514,8 +520,8 @@ def analyze_block(block_number):
                         one_eth_to_usd_price = decimal.Decimal(float(get_price_from_timestamp(block["timestamp"], prices["eth_to_usd"])))
                         # Check if arbitrage is sponsered by a flash loan
                         if tx_index in flash_loans:
-                            print(colors.FAIL+"!!! Flash Loan !!!"+colors.END)
                             for token_address in flash_loans[tx_index]:
+                                print(colors.FAIL+"!!! Flash Loan !!!"+colors.END)
                                 flash_loan = flash_loans[tx_index][token_address]
                                 amount = decimal.Decimal(flash_loans[tx_index][token_address]["amount"]) / 10**flash_loans[tx_index][token_address]["token_decimals"]
                                 fee = decimal.Decimal(flash_loans[tx_index][token_address]["fee"]) / 10**flash_loans[tx_index][token_address]["token_decimals"]
@@ -607,6 +613,8 @@ def analyze_block(block_number):
                                         one_token_to_eth_price = 0
                                 elif gains[coin]["token_address"] == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
                                     one_token_to_eth_price = decimal.Decimal(float(1.0))
+                                else:
+                                    one_token_to_eth_price = 0
                                 if one_token_to_eth_price:
                                     gains[coin]["one_token_to_eth_price"] = float(one_token_to_eth_price)
                                     if amount != 0:
@@ -641,6 +649,8 @@ def analyze_block(block_number):
                                         one_token_to_eth_price = 0
                                 elif gains[coin]["token_address"] == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
                                     one_token_to_eth_price = decimal.Decimal(float(1.0))
+                                else:
+                                    one_token_to_eth_price = 0
                                 if one_token_to_eth_price:
                                     gains[coin]["one_token_to_eth_price"] = float(one_token_to_eth_price)
                                     if amount != 0:
@@ -673,12 +683,21 @@ def analyze_block(block_number):
                         for i in range(len(swaps[tx_index])):
                             swaps[tx_index][i]["in_amount"] = str(swaps[tx_index][i]["in_amount"])
                             swaps[tx_index][i]["out_amount"] = str(swaps[tx_index][i]["out_amount"])
+                            swaps[tx_index][i]["out_token_name"] = ''.join(swaps[tx_index][i]["out_token_name"].split('\x00'))
+                            swaps[tx_index][i]["in_token_name"] = ''.join(swaps[tx_index][i]["in_token_name"].split('\x00'))
 
                         if flash_loan:
                             flash_loan["amount"] = str(flash_loan["amount"])
                             flash_loan["fee"] = str(flash_loan["fee"])
                             flash_loan["token_to_eth_price"] = float(flash_loan["token_to_eth_price"]) if flash_loan["token_to_eth_price"] != None else flash_loan["token_to_eth_price"]
                             flash_loan["fee_eth"] = float(flash_loan["fee_eth"]) if flash_loan["fee_eth"] != None else flash_loan["fee_eth"]
+
+                        copy_gains = copy.deepcopy(gains)
+                        for gain in copy_gains:
+                            if '\x00' in gain:
+                                key = ''.join(gain.split('\x00'))
+                                gains[key] = gains[gain]
+                                del gains[gain]
 
                         finding = {
                             "block_number": block_number,
@@ -740,11 +759,11 @@ def init_process(_prices):
     global prices
     global mongo_connection
 
-    w3 = Web3(Web3.HTTPProvider(WEB3_HTTP_RPC))
+    w3 = Web3(PROVIDER)
     if w3.isConnected():
         print("Connected worker to "+w3.clientVersion)
     else:
-        print(colors.FAIL+"Error: Could not connect to "+WEB3_HTTP_RPC+colors.END)
+        print(colors.FAIL+"Error: Could not connect to Ethereum client. Please check the provider!"+colors.END)
     prices = _prices
     mongo_connection = pymongo.MongoClient("mongodb://"+MONGO_HOST+":"+str(MONGO_PORT), maxPoolSize=None)
 

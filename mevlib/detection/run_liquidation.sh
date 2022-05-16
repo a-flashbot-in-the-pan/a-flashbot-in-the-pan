@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-nohup python3 liquidation.py 13000000:14444725 &> liquidation.log&
+nohup python3.8 liquidation.py 10000000:14444725 &> liquidation.log&
