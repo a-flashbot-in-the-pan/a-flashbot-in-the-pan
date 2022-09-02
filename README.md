@@ -1,4 +1,6 @@
-# Frontrunning-Mitigation
+# A Flash(bot) in the Pan
+
+A collection of tools to measure and analyze frontrunning attacks on private pools such as Flashbots. This repository also includes the data that was collected and evaluated during our study. Our paper can be found [here](https://arxiv.org/ftp/arxiv/papers/2206/2206.04185.pdf).
 
 ## Installation Instructions
 
@@ -44,21 +46,3 @@ output is written to the logs, so to view output, the log level must be at least
 ``` shell
 ./mev --log-level INFO detection <BLOCK_NUM1> <BLOCK_NUM2>
 ```
-
-
-#### Testing Insertion
-TODO need to update the following to reflect the new syntax (code changes
-probably required). This section will probably get merged with the above.
-``` shell
-# Examples
-python3 main.py -b 10882755 # Uniswap V2
-python3 main.py -b 9317713  # Uniswap V1
-python3 main.py -b 10892526 # SushiSwap
-python3 main.py -b 7100448  # Bancor
-```
-
-## TODO's
-
-- [ ] Improve the execution time of executing transactions
-- [ ] Add support for displacement
-- [ ] Add support for suppression
