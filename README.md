@@ -1,5 +1,8 @@
-# A Flash(bot) in the Pan
-![Flashbot in the Pan](https://raw.githubusercontent.com/a-flashbot-in-the-pan/a-flashbot-in-the-pan/logo.png)
+<div align="center">
+  <img src="logo.png" alt="drawing" width="300"/>
+</div>
+
+<h1 align="center">A Flash(bot) in the Pan</h1>
 
 A collection of tools to measure and analyze frontrunning attacks on private pools such as [Flashbots](https://docs.flashbots.net). Our paper can be found [here](https://arxiv.org/ftp/arxiv/papers/2206/2206.04185.pdf).
 
