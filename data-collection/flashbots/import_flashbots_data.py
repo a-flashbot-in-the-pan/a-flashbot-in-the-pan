@@ -13,8 +13,6 @@ def main():
         subprocess.run(["wget", "https://blocks.flashbots.net/v1/all_blocks"])
     # Import into mongodb
     subprocess.run(["mongoimport", '--uri="mongodb://'+MONGO_HOST+':'+str(MONGO_PORT)+'/flashbots" --collection flashbots_blocks --jsonArray --type json --file all_blocks'])
-    # Clean up
-    subprocess.run(["rm", "all_blocks"])
 
 if __name__ == "__main__":
     main()
