@@ -57,11 +57,24 @@ docker run -m 16g --memory-swap="24g" -p 8888:8888 -it a-flashbot-in-the-pan:lat
 
 ## Installation Instructions
 
+### 1. Install MongoDB
+
+##### MacOS
+
+``` shell
+brew tap mongodb/brew
+brew install mongodb-community@4.4
+```
+
+For other operating systems follow the installation instructions on [mongodb.com](https://docs.mongodb.com/manual/installation/).
+
+### 2. Install Python dependencies
+
 ``` shell
 python3 -m pip install -r requirements.txt
 ```
 
-## Run Instructions
+## Data Collection
 
 #### Measuring MEV arbitrage
 
@@ -75,7 +88,8 @@ python3 arbitrage.py 11706655:11706655
 python3 liquidation.py 11181773:11181773
 ```
 
-## Notebooks
+## Analysis 
+
 The bulk of the analysis was done in Jupyter notebooks, which can be opened by
 running
 
