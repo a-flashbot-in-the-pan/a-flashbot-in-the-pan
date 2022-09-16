@@ -117,8 +117,7 @@ gdown
 
 ```
 
-The bulk of the analysis was done in Jupyter notebooks, which can be opened by:
-running
+The bulk of the analysis was done in Jupyter notebooks, which can be opened by running:
 
 ``` shell
 cd analysis
