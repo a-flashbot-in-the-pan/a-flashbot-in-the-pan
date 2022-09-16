@@ -54,7 +54,7 @@ cd /root/data-collection/pending-transactions
 node observer.js
 ```
 
-To run the analysis, please launch the Jupyter notebook server inside the container using the following commands and then open up http://localhost:8888 on your browser:
+To run the final analysis, please launch the Jupyter notebook server inside the container using the following commands and then open up http://localhost:8888 on your browser:
 
 ``` shell
 cd /root/analysis
