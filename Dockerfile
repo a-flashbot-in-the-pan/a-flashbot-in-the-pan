@@ -5,7 +5,7 @@ MAINTAINER Christof Torres (christof.torres@inf.ethz.ch)
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update -q && \
     apt-get install -y \
-    wget software-properties-common python3-distutils python3-pip python3-apt python3-dev iputils-ping && \
+    wget curl software-properties-common python3-distutils python3-pip python3-apt python3-dev iputils-ping && \
     apt-get clean -q && rm -rf /var/lib/apt/lists/*
 
 # Install MongoDB
@@ -22,5 +22,16 @@ COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 RUN rm requirements.txt
 
+# Install Node.js
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+RUN apt-get update -q && \
+    apt-get install -y nodejs && \
+    apt-get clean -q && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /root
 COPY data-collection data-collection
+WORKDIR /root/data-collection/pending-transactions
+RUN npm install
+
+WORKDIR /root
+COPY analysis analysis
