@@ -50,7 +50,7 @@ python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> # For exmaple: pyth
 To run the analysis, please launch the Jupyter notebook server inside the container using the following commands and then open up http://localhost:8888 on your browser:
 
 ``` shell
-cd /root/scripts/analysis
+cd /root/analysis
 jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root --NotebookApp.token='' --NotebookApp.password=''
 ```
 
@@ -102,8 +102,11 @@ python3 import_flashbots_data.py
 
 
 ``` shell
+cd data-collection/mev/sandwiches
 python3 sandwiches.py  <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+cd data-collection/mev/arbitrage
 python3 arbitrage.py   <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+cd data-collection/mev/liquidation
 python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
 ```
 
