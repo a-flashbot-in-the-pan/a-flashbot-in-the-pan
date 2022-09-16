@@ -12,6 +12,14 @@ A collection of tools to measure and analyze frontrunning attacks on private poo
 python3 -m pip install -r requirements.txt
 ```
 
+## Run Instructions
+
+### Measuring MEV liquidations
+
+``` shell
+python3 liquidation.py 11181773:11181773
+```
+
 ## Notebooks
 The bulk of the analysis was done in Jupyter notebooks, which can be opened by
 running
