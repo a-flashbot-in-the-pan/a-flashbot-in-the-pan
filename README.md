@@ -143,26 +143,33 @@ unzip prices.zip
 rm prices.zip
 mv prices.json data-collection/mev/utils/
 
-# Download sandwich data
+# Download and import sandwich data
 gdown 
 unzip sandwich_results.zip
 rm sandwich_results.zip
 mongoimport --uri="mongodb://localhost:27017/flashbots" --collection sandwich_results --jsonArray --type json --file sandwich_results.json
 rm sandwich_results.json
 
-# Download arbitrage data
+# Download and import arbitrage data
 gdown 
 unzip arbitrage_results.zip
 rm arbitrage_results.zip
 mongoimport --uri="mongodb://localhost:27017/flashbots" --collection arbitrage_results --jsonArray --type json --file arbitrage_results.json
 rm arbitrage_results.json
 
-# Download liquidation data
+# Download and import liquidation data
 gdown 
 unzip liquidation_results.zip
 rm liquidation_results.zip
 mongoimport --uri="mongodb://localhost:27017/flashbots" --collection liquidation_results --jsonArray --type json --file liquidation_results.json
 rm liquidation_results.json
+
+# Download and import observed transactions data
+gdown
+
+# Download and import private transactions data
+gdown
+
 ```
 
 The bulk of the analysis was done in Jupyter notebooks, which can be opened by running:
