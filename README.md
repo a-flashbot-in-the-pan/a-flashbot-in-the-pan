@@ -40,7 +40,7 @@ cd /root/data-collection/mev/liquidation
 python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> # For exmaple: python3 liquidation.py 11181773:11181773
 ```
 
-To run the analysis, please launch the Jupyter notebook server inside the container the following commands and then open up http://localhost:8888 on your browser:
+To run the analysis, please launch the Jupyter notebook server inside the container using the following commands and then open up http://localhost:8888 on your browser:
 
 ``` shell
 cd /root/scripts/analysis
