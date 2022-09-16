@@ -1,9 +1,4 @@
 cfscrape==2.1.1
-eth==0.0.1
-eth_hash==0.3.2
-eth_typing==3.0.0
-eth_utils==2.0.0
-hexbytes==0.2.2
 matplotlib==3.5.1
 numpy==1.22.1
 pandas==1.4.0
