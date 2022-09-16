@@ -24,6 +24,13 @@ mkdir -p /data/db
 mongod --fork --logpath /var/log/mongod.log
 ```
 
+Import the flashbots blocks into MongoDB by running inside the container the following commands:  
+
+``` shell
+cd /root/data-collection/flashbots
+python3 import_flashbots_data.py
+```
+
 To run the MEV measurement scripts, simply run inside the container the following commands:
 
 ``` shell
@@ -40,10 +47,17 @@ cd /root/data-collection/mev/liquidation
 python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> # For exmaple: python3 liquidation.py 11181773:11181773
 ```
 
-To run the analysis, please launch the Jupyter notebook server inside the container using the following commands and then open up http://localhost:8888 on your browser:
+To collect pending transactions, simply run inside the container the following commands:
 
 ``` shell
-cd /root/scripts/analysis
+cd /root/data-collection/pending-transactions
+node observer.js
+```
+
+To run the final analysis, please launch the Jupyter notebook server inside the container using the following commands and then open up http://localhost:8888 on your browser:
+
+``` shell
+cd /root/analysis
 jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root --NotebookApp.token='' --NotebookApp.password=''
 ```
 
@@ -76,26 +90,67 @@ python3 -m pip install -r requirements.txt
 
 ## Data Collection
 
-#### Measuring MEV arbitrage
+#### Launch MongoDB
 
 ``` shell
-python3 arbitrage.py 11706655:11706655
+mongod
 ```
 
-#### Measuring MEV liquidations
+#### Download and import Flashbots data
 
 ``` shell
-python3 liquidation.py 11181773:11181773
+cd data-collection/flashbots
+python3 import_flashbots_data.py
+```
+
+#### Measure MEV extraction
+
+:warning: **!! To measure past MEV extraction you will need a connection to a fully synched Ethereum archive node and change ```PROVIDER``` in ```data-collection/mev/utils/settings.py``` accordingly. !!**
+
+
+``` shell
+cd data-collection/mev/sandwiches
+python3 sandwiches.py  <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+cd data-collection/mev/arbitrage
+python3 arbitrage.py   <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+cd data-collection/mev/liquidation
+python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+```
+
+#### Collect pending transactions
+
+:warning: **!! To collect pending transactions you will need a connection to an Ethereum node and set ```web3``` in ```data-collection/pending-transactions/observer.js``` accordingly. !!**
+
+``` shell
+
 ```
 
 ## Analysis 
 
-You can either run the data collection on your own using our scripts or you can simply download our data from [here](https://drive.google.com/drive/folders/16fAYXjlt0DqvrUDyYEM8hi24tDcR750i?usp=sharing).
-
-The bulk of the analysis was done in Jupyter notebooks, which can be opened by
-running
+You can either run the data collection scripts or download our data from Google drive:
 
 ``` shell
+# Download flashbot blocks
+gdown 
+
+# Download token prices
+gdown 
+
+# Download sandwich data
+gdown 
+
+# Download arbitrage data
+gdown 
+
+# Download liquidation data
+gdown 
+
+```
+
+The bulk of the analysis was done in Jupyter notebooks, which can be opened by running:
+
+``` shell
+cd analysis
 jupyter notebook
 ```
 and selecting the notebook of choice.
@@ -114,3 +169,14 @@ If using this repository for research, please cite as
   year={2022} 
 }
 ```
+
+
+TODO:
+- Add google drive links
+- Add node.js to Dockerfile
+- Build docker image and upload to docker hub
+- Add private transaction analyis
+- Cleanup notebooks
+- Test observer
+- Test private transaction analysis
+- Test notebooks
