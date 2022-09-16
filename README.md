@@ -130,21 +130,39 @@ python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END>
 You can either run the data collection scripts or download our data from Google drive:
 
 ``` shell
-# Download flashbots data
+# Download and import flashbots data
 gdown 
+unzip all_blocks.zip
+rm all_blocks.zip
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection flashbots_blocks --jsonArray --type json --file all_blocks
+rm all_blocks
 
 # Download token prices
 gdown 
+unzip prices.zip
+rm prices.zip
+mv prices.json data-collection/mev/utils/
 
 # Download sandwich data
 gdown 
+unzip sandwich_results.zip
+rm sandwich_results.zip
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection sandwich_results --jsonArray --type json --file sandwich_results.json
+rm sandwich_results.json
 
 # Download arbitrage data
 gdown 
+unzip arbitrage_results.zip
+rm arbitrage_results.zip
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection arbitrage_results --jsonArray --type json --file arbitrage_results.json
+rm arbitrage_results.json
 
 # Download liquidation data
 gdown 
-
+unzip liquidation_results.zip
+rm liquidation_results.zip
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection liquidation_results --jsonArray --type json --file liquidation_results.json
+rm liquidation_results.json
 ```
 
 The bulk of the analysis was done in Jupyter notebooks, which can be opened by running:
