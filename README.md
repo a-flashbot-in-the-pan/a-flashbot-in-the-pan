@@ -16,19 +16,31 @@ To run the container, please install docker and run:
 docker pull christoftorres/a-flashbot-in-the-pan && docker run -m 16g --memory-swap="24g" -p 8888:8888 -it christoftorres/a-flashbot-in-the-pan
 ```
 
-To measure if a block contains an arbitrage-based MEV extraction simply run inside the container the following commands:
+Afterwards, start an instance of MongoDB inside the container:
 
 ``` shell
 # Start MongoDB
 mkdir -p /data/db
 mongod --fork --logpath /var/log/mongod.log
-
-# Run measurement script
-cd /root/data-collection/mev/arbitrage
-python3 arbitrage.py 11706655:11706655
 ```
 
-To start the Jupyter notebook server, please run inside the container the following commands and then open up http://localhost:8888 on your browser:
+To run the MEV measurement scripts, simply run inside the container the following commands:
+
+``` shell
+# Run the sandwich measurement script
+cd /root/data-collection/mev/sandwiches
+python3 sandwiches.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> # For exmaple: python3 sandwiches.py 10892526:10892526
+
+# Run the arbitrage measurement script
+cd /root/data-collection/mev/arbitrage
+python3 arbitrage.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> # For exmaple: python3 arbitrage.py 11706655:11706655
+
+# Run the liquidation measurement script
+cd /root/data-collection/mev/liquidation
+python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> # For exmaple: python3 liquidation.py 11181773:11181773
+```
+
+To run the analysis, please launch the Jupyter notebook server inside the container the following commands and then open up http://localhost:8888 on your browser:
 
 ``` shell
 cd /root/scripts/analysis
