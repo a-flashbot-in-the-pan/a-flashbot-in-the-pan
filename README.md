@@ -90,7 +90,25 @@ python3 liquidation.py 11181773:11181773
 
 ## Analysis 
 
-You can either run the data collection on your own using our scripts or you can simply download our data from [here](https://drive.google.com/drive/folders/16fAYXjlt0DqvrUDyYEM8hi24tDcR750i?usp=sharing).
+You can either run the data collection on your own using our scripts or you can simply download our data from Google drive:
+
+``` shell
+# Download flashbot blocks
+gdown 
+
+# Download token prices
+gdown 
+
+# Download sandwich data
+gdown 
+
+# Download arbitrage data
+gdown 
+
+# Download liquidation data
+gdown 
+
+```
 
 The bulk of the analysis was done in Jupyter notebooks, which can be opened by
 running
