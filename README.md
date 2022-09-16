@@ -4,7 +4,10 @@
 
 <h1 align="center">A Flash(bot) in the Pan</h1>
 
-A collection of tools to measure and analyze frontrunning attacks on private pools such as [Flashbots](https://docs.flashbots.net). Our paper can be found [here](https://arxiv.org/ftp/arxiv/papers/2206/2206.04185.pdf).
+A collection of tools to measure and analyze frontrunning attacks on private
+pools such as [Flashbots](https://docs.flashbots.net). Our paper can be found
+[here](https://arxiv.org/ftp/arxiv/papers/2206/2206.04185.pdf) and our data is
+available for download [here](https://drive.google.com/drive/folders/16fAYXjlt0DqvrUDyYEM8hi24tDcR750i?usp=sharing).
 
 ## Quick Start
 
@@ -189,6 +192,9 @@ If using this repository for research, please cite as
   aflashbotinthepan, 
   address={Nice, France}, 
   title={A Flash(bot) in the Pan: Measuring Maximal Extractable Value in Private Pools}, 
+  ISBN={978-1-4503-9259-4}, 
+  DOI={10.1145/3517745.3561448}, 
+  booktitle={Proceedings of the 22nd ACM Internet Measurement Conference (IMC ’22)}, 
   publisher={Association for Computing Machinery}, 
   author={Weintraub, Ben and Ferreira Torres, Christof and Nita-Rotaru, Cristina and State, Radu}, 
   year={2022} 
