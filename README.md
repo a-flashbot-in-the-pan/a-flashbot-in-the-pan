@@ -83,16 +83,31 @@ python3 -m pip install -r requirements.txt
 
 ## Data Collection
 
-#### Measuring MEV arbitrage
+#### Launch MongoDB
 
 ``` shell
-python3 arbitrage.py 11706655:11706655
+mongod
 ```
 
-#### Measuring MEV liquidations
+#### Download Flashbots data
 
 ``` shell
-python3 liquidation.py 11181773:11181773
+cd data-collection/flashbots
+python3 import_flashbots_data.py
+```
+
+#### Measure MEV extraction
+
+``` shell
+python3 sandwiches.py  <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+python3 arbitrage.py   <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
+```
+
+#### Collect pending transactions
+
+``` shell
+
 ```
 
 ## Analysis 
