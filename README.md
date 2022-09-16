@@ -14,10 +14,16 @@ python3 -m pip install -r requirements.txt
 
 ## Run Instructions
 
-### Measuring MEV liquidations
+#### Measuring MEV liquidations
 
 ``` shell
 python3 liquidation.py 11181773:11181773
+```
+
+#### Measuring MEV arbitrage
+
+``` shell
+python3 liquidation.py 11706655:11706655
 ```
 
 ## Notebooks
