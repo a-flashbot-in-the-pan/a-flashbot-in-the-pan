@@ -169,3 +169,14 @@ If using this repository for research, please cite as
   year={2022} 
 }
 ```
+
+
+TODO:
+- Add google drive links
+- Add node.js to Dockerfile
+- Build docker image and upload to docker hub
+- Add private transaction analyis
+- Cleanup notebooks
+- Test observer
+- Test private transaction analysis
+- Test notebooks
