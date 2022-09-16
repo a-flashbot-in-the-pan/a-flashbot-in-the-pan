@@ -24,6 +24,13 @@ mkdir -p /data/db
 mongod --fork --logpath /var/log/mongod.log
 ```
 
+Import the flashbots blocks into MongoDB by running inside the container the following commands:  
+
+``` shell
+cd /root/data-collection/flashbots
+python3 import_flashbots_data.py
+```
+
 To run the MEV measurement scripts, simply run inside the container the following commands:
 
 ``` shell
