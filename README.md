@@ -160,10 +160,10 @@ mongoimport --uri="mongodb://localhost:27017/flashbots" --collection arbitrage_r
 rm arbitrage_results.json
 
 # Download and import liquidation data
-gdown https://drive.google.com/file/d/10sSee0lSmXx4bYsosCnJo8jMldQKJv8s
+gdown https://drive.google.com/uc?id=10sSee0lSmXx4bYsosCnJo8jMldQKJv8s
 unzip liquidation_results.zip
 rm liquidation_results.zip
-mongoimport --uri="mongodb://localhost:27017/flashbots" --collection liquidation_results --jsonArray --type json --file liquidation_results.json
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection liquidation_results --type json --file liquidation_results.json
 rm liquidation_results.json
 
 # Download and import observed transactions data
