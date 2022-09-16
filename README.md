@@ -89,7 +89,7 @@ python3 -m pip install -r requirements.txt
 mongod
 ```
 
-#### Download Flashbots data
+#### Download and import Flashbots data
 
 ``` shell
 cd data-collection/flashbots
@@ -111,6 +111,8 @@ python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END>
 ```
 
 #### Collect pending transactions
+
+:warning: **!! To collect pending transactions you will need a connection to an Ethereum node and change ```Web3(Web3.givenProvider || 'ws://localhost:8546');``` in ```data-collection/pending-transactions/observer.js``` accordingly. !!**
 
 ``` shell
 
