@@ -130,7 +130,7 @@ python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END>
 You can either run the data collection scripts or download our data from Google drive:
 
 ``` shell
-# Download flashbot blocks
+# Download flashbots data
 gdown 
 
 # Download token prices
