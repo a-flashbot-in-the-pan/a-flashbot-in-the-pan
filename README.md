@@ -98,7 +98,7 @@ python3 import_flashbots_data.py
 
 #### Measure MEV extraction
 
-:warning: **!! To measure MEV you will need a connection to a full node and change ``` ``` accordingly. !!**
+:warning: **!! To measure past MEV extraction you will need a connection to a fully synched Ethereum archive node and change ```PROVIDER``` in ```data-collection/mev/utils/settings.py``` accordingly. !!**
 
 
 ``` shell
