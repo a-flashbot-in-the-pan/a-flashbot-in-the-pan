@@ -90,7 +90,7 @@ python3 liquidation.py 11181773:11181773
 
 ## Analysis 
 
-You can either run the data collection on your own using our scripts or you can simply download our data from Google drive:
+You can either run the data collection scripts or simply download our data from Google drive:
 
 ``` shell
 # Download flashbot blocks
