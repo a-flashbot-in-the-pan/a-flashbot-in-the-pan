@@ -98,6 +98,9 @@ python3 import_flashbots_data.py
 
 #### Measure MEV extraction
 
+:warning: **!! To measure MEV you will need a connection to a full node and change ``` ``` accordingly. !!**
+
+
 ``` shell
 python3 sandwiches.py  <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
 python3 arbitrage.py   <BLOCK_RANGE_START>:<BLOCK_RANGE_END> 
