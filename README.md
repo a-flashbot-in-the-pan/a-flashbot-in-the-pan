@@ -47,6 +47,13 @@ cd /root/data-collection/mev/liquidation
 python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END> # For exmaple: python3 liquidation.py 11181773:11181773
 ```
 
+To collect pending transactions, simply run inside the container the following commands:
+
+``` shell
+cd /root/data-collection/pending-transactions
+node observer.js
+```
+
 To run the analysis, please launch the Jupyter notebook server inside the container using the following commands and then open up http://localhost:8888 on your browser:
 
 ``` shell
