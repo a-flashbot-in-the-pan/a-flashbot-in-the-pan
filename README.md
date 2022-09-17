@@ -90,6 +90,16 @@ For other operating systems follow the installation instructions on [mongodb.com
 python3 -m pip install -r requirements.txt
 ```
 
+### 3. Install Node.js
+
+##### MacOS
+
+``` shell
+brew install node
+```
+
+For other operating systems follow the installation instructions on [nodejs.org](https://nodejs.org/en/download/package-manager/).
+
 ## Data Collection
 
 #### Launch MongoDB
@@ -124,7 +134,9 @@ python3 liquidation.py <BLOCK_RANGE_START>:<BLOCK_RANGE_END>
 :warning: **!! To collect pending transactions you will need a connection to an Ethereum node and set ```web3``` in ```data-collection/pending-transactions/observer.js``` accordingly. !!**
 
 ``` shell
-
+cd data-collection/pending-transactions
+npm install
+node observer.js
 ```
 
 ## Analysis 
@@ -203,10 +215,8 @@ If using this repository for research, please cite as
 
 TODO:
 - Add google drive links
-- Add node.js to Dockerfile
 - Build docker image and upload to docker hub
 - Add private transaction analyis
 - Cleanup notebooks
-- Test observer
 - Test private transaction analysis
 - Test notebooks
