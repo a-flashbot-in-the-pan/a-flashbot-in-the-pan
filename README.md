@@ -145,7 +145,7 @@ You can either run the data collection scripts or download our data from Google 
 
 ``` shell
 # Download and import flashbots data
-gdown 
+gdown https://drive.google.com/uc?id=1yMxpNMf5x0BLnJ-G1QXnmLulPyOvo_HD
 unzip all_blocks.zip
 rm all_blocks.zip
 mongoimport --uri="mongodb://localhost:27017/flashbots" --collection flashbots_blocks --jsonArray --type json --file all_blocks
