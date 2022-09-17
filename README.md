@@ -161,14 +161,14 @@ mv prices.json data-collection/mev/utils/
 gdown 
 unzip sandwich_results.zip
 rm sandwich_results.zip
-mongoimport --uri="mongodb://localhost:27017/flashbots" --collection sandwich_results --jsonArray --type json --file sandwich_results.json
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection sandwich_results --type json --file sandwich_results.json
 rm sandwich_results.json
 
 # Download and import arbitrage data
 gdown 
 unzip arbitrage_results.zip
 rm arbitrage_results.zip
-mongoimport --uri="mongodb://localhost:27017/flashbots" --collection arbitrage_results --jsonArray --type json --file arbitrage_results.json
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection arbitrage_results --type json --file arbitrage_results.json
 rm arbitrage_results.json
 
 # Download and import liquidation data
