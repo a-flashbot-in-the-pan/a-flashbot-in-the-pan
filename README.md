@@ -7,7 +7,7 @@
 A collection of tools to measure and analyze frontrunning attacks on private
 pools such as [Flashbots](https://docs.flashbots.net). Our paper can be found
 [here](https://arxiv.org/ftp/arxiv/papers/2206/2206.04185.pdf) and our data is
-available for download [here](https://drive.google.com/drive/folders/16fAYXjlt0DqvrUDyYEM8hi24tDcR750i?usp=sharing).
+available for download [here](https://drive.google.com/drive/folders/1mlaq3CPyK-H-F2Lai9JGBBu5YoS04RPI?usp=sharing).
 
 ## Quick Start
 
@@ -145,27 +145,27 @@ You can either run the data collection scripts or download our data from Google 
 
 ``` shell
 # Download and import flashbots data
-gdown https://drive.google.com/uc?id=1yMxpNMf5x0BLnJ-G1QXnmLulPyOvo_HD
-unzip all_blocks.zip
-rm all_blocks.zip
-mongoimport --uri="mongodb://localhost:27017/flashbots" --collection flashbots_blocks --jsonArray --type json --file all_blocks
-rm all_blocks
+gdown https://drive.google.com/uc?id=1Cge4XiuvZJK5i31JzmqrlPYFTvrQxzVj
+unzip flashbots_blocks.zip
+rm flashbots_blocks.zip
+mongoimport --uri="mongodb://localhost:27017/flashbots" --collection flashbots_blocks --type json --file flashbots_blocks.json
+rm flashbots_blocks.json
 
 # Download token prices
-gdown 
+gdown https://drive.google.com/uc?id=1zSrz6-GuXqDX3qa_rLVlZTte-Kubz_uE
 unzip prices.zip
 rm prices.zip
 mv prices.json data-collection/mev/utils/
 
 # Download and import sandwich data
-gdown 
+gdown https://drive.google.com/uc?id=1K5kB5PlZ55EzGwNHlSRNVuQhWSp2CWPY
 unzip sandwich_results.zip
 rm sandwich_results.zip
 mongoimport --uri="mongodb://localhost:27017/flashbots" --collection sandwich_results --type json --file sandwich_results.json
 rm sandwich_results.json
 
 # Download and import arbitrage data
-gdown 
+gdown https://drive.google.com/uc?id=1oMgUONsdHZ8XsfrxmVaNF2Hl7fs-hE6R
 unzip arbitrage_results.zip
 rm arbitrage_results.zip
 mongoimport --uri="mongodb://localhost:27017/flashbots" --collection arbitrage_results --type json --file arbitrage_results.json
