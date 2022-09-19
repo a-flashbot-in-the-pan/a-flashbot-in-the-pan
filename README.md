@@ -216,7 +216,5 @@ If using this repository for research, please cite as
 TODO:
 - Add google drive links
 - Build docker image and upload to docker hub
-- Add private transaction analyis
 - Cleanup notebooks
-- Test private transaction analysis
 - Test notebooks
