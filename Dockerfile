@@ -31,15 +31,19 @@ RUN apt-get update -q && \
 WORKDIR /root
 COPY data-collection data-collection
 
+# Install Node.js dependencies
+WORKDIR /root/data-collection/pending-transactions
+RUN npm install
+
 # Download token prices
 RUN gdown https://drive.google.com/uc?id=1zSrz6-GuXqDX3qa_rLVlZTte-Kubz_uE
 RUN unzip prices.zip
 RUN rm prices.zip
-RUN mv prices.json data-collection/mev/utils/
+RUN mv prices.json /root/data-collection/mev/utils/
 
-# Install Node.js dependencies
-WORKDIR /root/data-collection/pending-transactions
-RUN npm install
+# Download and import MongoDB data
+WORKDIR /root/data-collection
+RUN ./download_and_import_data.sh
 
 WORKDIR /root
 COPY analysis analysis
