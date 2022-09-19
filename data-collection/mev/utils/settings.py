@@ -3,7 +3,7 @@
 
 from web3 import Web3
 
-PROVIDER = Web3.HTTPProvider("http://pf.uni.lux:8545")
+PROVIDER = Web3.HTTPProvider("http://localhost:8545")
 
 ETHERSCAN_API_KEY = "ANAZQYWNY3ZBIIMIY9P153TE6Y78PUM226"
 
