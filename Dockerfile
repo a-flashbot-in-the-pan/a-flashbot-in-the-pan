@@ -5,7 +5,7 @@ MAINTAINER Christof Torres (christof.torres@inf.ethz.ch)
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update -q && \
     apt-get install -y \
-    wget curl software-properties-common python3-distutils python3-pip python3-apt python3-dev iputils-ping && \
+    wget curl unzip software-properties-common python3-distutils python3-pip python3-apt python3-dev iputils-ping && \
     apt-get clean -q && rm -rf /var/lib/apt/lists/*
 
 # Install MongoDB
@@ -30,6 +30,14 @@ RUN apt-get update -q && \
 
 WORKDIR /root
 COPY data-collection data-collection
+
+# Download token prices
+RUN gdown https://drive.google.com/uc?id=1zSrz6-GuXqDX3qa_rLVlZTte-Kubz_uE
+RUN unzip prices.zip
+RUN rm prices.zip
+RUN mv prices.json data-collection/mev/utils/
+
+# Install Node.js dependencies
 WORKDIR /root/data-collection/pending-transactions
 RUN npm install
 
