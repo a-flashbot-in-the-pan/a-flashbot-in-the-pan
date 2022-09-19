@@ -41,9 +41,5 @@ RUN unzip prices.zip
 RUN rm prices.zip
 RUN mv prices.json /root/data-collection/mev/utils/
 
-# Download and import MongoDB data
-WORKDIR /root/data-collection
-RUN ./download_and_import_data.sh
-
 WORKDIR /root
 COPY analysis analysis
