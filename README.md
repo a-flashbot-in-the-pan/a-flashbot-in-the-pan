@@ -22,7 +22,7 @@ docker pull christoftorres/a-flashbot-in-the-pan && docker run -m 16g --memory-s
 Afterwards, start an instance of MongoDB inside the container:
 
 ``` shell
-mongod --fork --logpath /var/log/mongod.log
+mkdir -p /data/db && mongod --fork --logpath /var/log/mongod.log
 ```
 
 Import the flashbots blocks into MongoDB by running inside the container the following commands:  
