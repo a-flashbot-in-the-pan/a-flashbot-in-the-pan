@@ -174,10 +174,3 @@ If using this repository for research, please cite as
   year={2022} 
 }
 ```
-
-
-TODO:
-- Add google drive links
-- Build docker image and upload to docker hub
-- Cleanup notebooks
-- Test notebooks
