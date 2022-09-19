@@ -22,7 +22,6 @@ docker pull christoftorres/a-flashbot-in-the-pan && docker run -m 16g --memory-s
 Afterwards, start an instance of MongoDB inside the container:
 
 ``` shell
-mkdir -p /data/db
 mongod --fork --logpath /var/log/mongod.log
 ```
 
