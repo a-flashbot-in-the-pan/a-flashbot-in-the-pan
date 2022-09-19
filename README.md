@@ -144,7 +144,8 @@ node observer.js
 You can either run the data collection scripts or download our data from Google drive:
 
 ``` shell
-python3 download_data.py
+cd data-collection
+python3 download_and_import_data.py
 
 ```
 
