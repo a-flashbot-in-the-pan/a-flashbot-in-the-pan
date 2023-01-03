@@ -6,7 +6,7 @@
 
 A collection of tools to measure and analyze frontrunning attacks on private
 pools such as [Flashbots](https://docs.flashbots.net). Our paper can be found
-[here](https://arxiv.org/ftp/arxiv/papers/2206/2206.04185.pdf) and our data is
+[here](https://arxiv.org/pdf/2206.04185.pdf) and our data is
 available for download [here](https://drive.google.com/drive/folders/1nW3Ar2u9jtDX-pxAayO4auZHGXEUkq-W?usp=sharing).
 
 ## Quick Start
